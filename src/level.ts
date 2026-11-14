@@ -21,20 +21,20 @@ export class Level {
     readonly height: number;
 
     constructor(public readonly grid: TileType[][]) {
+        if (grid.length === 0 || grid[0] === undefined) throw new Error("Malformed level");
         this.height = grid.length;
-        this.width: grid[0].length;
+        this.width = grid[0].length;
     }
 
     tileAt(x: number, y: number): TileType {
         if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
             return TileType.Wall;
         }
-        return this.grid[y][x];
+        return this.grid[y]?.[x] ?? TileType.Wall;
     }
 
     isSolid(x: number, y: number): boolean {
         return TILE_DATA[this.tileAt(x, y)].solid;
     }
-
 }
 
