@@ -1,0 +1,16 @@
+{
+  "name": "frassa",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/howler": "^2.2.13"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "howler": "^2.2.4"
+  }
+}
