@@ -1,6 +1,7 @@
 
 import type { RayHit } from "./raycaster";
-import { Level, TILE_DATA } from "./level.ts";
+import { Level, TILE_DATA } from "./level";
+import { getTexture } from "./asset";
 
 export class Renderer {
     private readonly ctx: CanvasRenderingContext2D;
@@ -21,9 +22,18 @@ export class Renderer {
         for (let i = 0; i < hits.length; i++) {
             const h = hits[i]!;
             const lineH = H / Math.max(h.dist, 0.0001);
-            
-            this.ctx.fillStyle = TILE_DATA[level.tileAt(h.tileX, h.tileY)].color;
-            this.ctx.fillRect(i, H / 2 - lineH / 2, 1, lineH);
+            const top = H / 2 - lineH / 2;
+            const props = TILE_DATA[level.tileAt(h.tileX, h.tileY)];
+
+            if (props.texture) {
+                const tex = getTexture(props.texture);
+                const texX = Math.min(tex.width - 1, Math.floor(h.wallX * tex.width));
+                this.ctx.drawImage(tex, texX, 0, 1, tex.height, i, top, 1, lineH);
+            } else {
+                this.ctx.fillStyle = props.color;
+                this.ctx.fillRect(i, top, 1, lineH);
+            }
+
             if (h.side === 1) {
                 this.ctx.fillStyle = "rgba(0,0,0,0.35)";
                 this.ctx.fillRect(i, H / 2 - lineH / 2, 1, lineH);

@@ -2,6 +2,9 @@ import { Level, TileType, TILE_DATA } from "./level";
 import { Player } from "./player";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
+import { loadAssets } from "./asset";
+
+await loadAssets();
 
 const canvas = document.getElementById("display") as HTMLCanvasElement;
 const W = canvas.width, H = canvas.height;
