@@ -1,5 +1,6 @@
 
 import type { RayHit } from "./raycaster";
+import { EYE } from "./raycaster";
 import { Level, TILE_DATA } from "./level";
 import { getTexture, tryGetTexture } from "./asset";
 
@@ -12,31 +13,55 @@ export class Renderer {
         this.ctx = ctx;
     }
 
-    drawFrame(level: Level, hits: RayHit[]) {
+    private drawWallSlice(level: Level, h: RayHit, x: number, horizon: number, H: number) {
+        const ctx = this.ctx;
+        const props = TILE_DATA[level.tileAt(h.tileX, h.tileY)];
+        const height = props.height;
+
+        const scale = H / Math.max(h.dist, 0.0001);
+        const bottom = horizon + EYE * scale;
+        const top = horizon - (height - EYE) * scale;
+
+        if (props.texture && tryGetTexture(props.texture)) {
+            const tex = getTexture(props.texture);
+            if (props.repeat) {
+                for (let k = 0; k < Math.ceil(height); k++) {
+                    const f = Math.min(1, height - k);
+                    const dBottom = bottom - k * scale;
+                    const dTop = dBottom - f * scale;
+                    ctx.drawImage(
+                        tex,
+                        texX, tex.height * (1 - f), 1, tex.height * f,
+                        x, dTop, 1, dBottom - dTop,
+                    );
+                }
+            } else {
+                ctx.drawImage(tex, texX, 0, 1, tex.height, x, top, 1, bottom - top);
+            }
+        } else {
+            ctx.fillStyle = props.color;
+            ctx.fillRect(x, top, 1, bottom - top);
+        }
+
+        if (h.side === 1) {
+            ctx.fillStyle = "rgba(0,0,0,0.35)";
+            ctx.fillRect(x, top, 1, bottom - top);
+        }
+
+    }
+
+    drawFrame(level: Level, columns: RayHit[][]) {
         const W = this.canvas.width;
         const H = this.canvas.height;
+        const horizon = H / 2;
 
         this.ctx.fillStyle = "#334"; this.ctx.fillRect(0, 0, W, H / 2);
         this.ctx.fillStyle = "#554"; this.ctx.fillRect(0, H / 2, W, H / 2);
 
-        for (let i = 0; i < hits.length; i++) {
-            const h = hits[i]!;
-            const lineH = H / Math.max(h.dist, 0.0001);
-            const top = H / 2 - lineH / 2;
-            const props = TILE_DATA[level.tileAt(h.tileX, h.tileY)];
-
-            if (props.texture && tryGetTexture(props.texture)) {
-                const tex = getTexture(props.texture);
-                const texX = Math.min(tex.width - 1, Math.floor(h.wallX * tex.width));
-                this.ctx.drawImage(tex, texX, 0, 1, tex.height, i, top, 1, lineH);
-            } else {
-                this.ctx.fillStyle = props.color;
-                this.ctx.fillRect(i, top, 1, lineH);
-            }
-
-            if (h.side === 1) {
-                this.ctx.fillStyle = "rgba(0,0,0,0.35)";
-                this.ctx.fillRect(i, top, 1, lineH);
+        for (let i = 0; i < columns.length; i++) {
+            const column = columns[i]!;
+            for (let j = column.length - 1; j >= 0; j--) {
+                this.drawWallSlice(this.level, hits[j]!, i, horizon, H);
             }
         }
     }

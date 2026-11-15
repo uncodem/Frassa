@@ -14,6 +14,7 @@ export interface TileProperties {
     color: string;
     height: number;
     texture?: TextureId;
+    repeat?: boolean;
 }
 
 export const TILE_DATA: Record<TileType, TileProperties> = {
@@ -25,6 +26,8 @@ export const TILE_DATA: Record<TileType, TileProperties> = {
 export class Level {
     readonly width: number;
     readonly height: number;
+
+    readonly maxHeight: number = Math.max(...Object.values(TILE_DATA).filter(t => t.solid).map(t => t.height ?? 1));
 
     constructor(public readonly grid: TileType[][]) {
         if (grid.length === 0 || grid[0] === undefined) throw new Error("Malformed level");
@@ -41,6 +44,10 @@ export class Level {
 
     isSolid(x: number, y: number): boolean {
         return TILE_DATA[this.tileAt(x, y)].solid;
+    }
+
+    inBounds(mapX: number, mapY: number): boolean {
+        return mapX < this.width && mapX >= 0 && mapY < this.height && mapY >= 0;
     }
 
     boxHitsSolid(cx: number, cy: number, w: number, h: number): boolean {
