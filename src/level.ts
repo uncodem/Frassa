@@ -1,4 +1,6 @@
 
+import { TextureId } from "./asset";
+
 export const TileType = {
     Empty: 0,
     Wall: 1,
@@ -9,12 +11,13 @@ export type TileType = (typeof TileType)[keyof typeof TileType];
 export interface TileProperties {
     solid: boolean;
     color: string;
+    texture?: TextureId;
 }
 
 export const TILE_DATA: Record<TileType, TileProperties> = {
     [TileType.Empty] : { solid: false, color: "#000" },
-    [TileType.Wall]: { solid: true, color: "red" }
-}
+    [TileType.Wall]: { solid: true, color: "red", texture: TextureId.Wall },
+} satisfies Record<TileType, TileProperties>;
 
 export class Level {
     readonly width: number;
