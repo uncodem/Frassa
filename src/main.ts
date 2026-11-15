@@ -20,25 +20,17 @@ const level = new Level([
 ]);
 
 const player = new Player(1.5, 1.5, 0.3, 0.3);   // tile center
-const caster = new Raycaster(level, W);
+const raycaster = new Raycaster(level, W);
+const renderer = new Renderer(canvas);
 
-function frame() {
-    player.camera.angle += 0.01;   // slow spin so you can see it working
+function drawFrame(timestamp) {
+    player.turn(0.01);
 
-    ctx.fillStyle = "#334"; ctx.fillRect(0, 0, W, H / 2);
-    ctx.fillStyle = "#554"; ctx.fillRect(0, H / 2, W, H / 2);
+    const hits = raycaster.getFrame(player.x, player.y, player.camera);
+    renderer.drawFrame(level, hits);
 
-    const hits = caster.getFrame(player.x, player.y, player.camera);
-    for (let i = 0; i < hits.length; i++) {
-        const h = hits[i]!;
-        const lineH = H / Math.max(h.dist, 0.0001);
-        ctx.fillStyle = TILE_DATA[level.tileAt(h.tileX, h.tileY)].color;
-        ctx.fillRect(i, H / 2 - lineH / 2, 1, lineH);
-        if (h.side === 1) {                     // darken one axis for depth
-            ctx.fillStyle = "rgba(0,0,0,0.35)";
-            ctx.fillRect(i, H / 2 - lineH / 2, 1, lineH);
-        }
-    }
-    requestAnimationFrame(frame);
+    window.requestAnimationFrame(drawFrame);
 }
-frame();
+
+window.requestAnimationFrame(drawFrame);
+

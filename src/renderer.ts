@@ -12,7 +12,12 @@ export class Renderer {
     }
 
     drawFrame(level: Level, hits: RayHit[]) {
+        const W = this.canvas.width;
         const H = this.canvas.height;
+
+        this.ctx.fillStyle = "#334"; this.ctx.fillRect(0, 0, W, H / 2);
+        this.ctx.fillStyle = "#554"; this.ctx.fillRect(0, H / 2, W, H / 2);
+
         for (let i = 0; i < hits.length; i++) {
             const h = hits[i]!;
             const lineH = H / Math.max(h.dist, 0.0001);
