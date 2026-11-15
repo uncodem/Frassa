@@ -36,7 +36,7 @@ export class Renderer {
 
             if (h.side === 1) {
                 this.ctx.fillStyle = "rgba(0,0,0,0.35)";
-                this.ctx.fillRect(i, H / 2 - lineH / 2, 1, lineH);
+                this.ctx.fillRect(i, top, 1, lineH);
             }
         }
     }

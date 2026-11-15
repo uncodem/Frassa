@@ -2,11 +2,13 @@ export const asset = (p: string): string => `${import.meta.env.BASE_URL}assets/$
 
 export const TextureId = {
     Wall: "wall",
+    Wall2: "wall2",
 } as const;
 export type TextureId = (typeof TextureId)[keyof typeof TextureId];
 
 const FILES: Record<TextureId, string> = {
     [TextureId.Wall]: "wall.png",
+    [TextureId.Wall2]: "wall2.png",
 };
 
 const loaded = new Map<TextureId, HTMLImageElement>();
