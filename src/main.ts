@@ -1,6 +1,7 @@
 import { Level, TileType, TILE_DATA } from "./level";
 import { Player } from "./player";
 import { Raycaster } from "./raycaster";
+import { Renderer } from "./renderer";
 
 const canvas = document.getElementById("display") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;

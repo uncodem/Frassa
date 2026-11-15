@@ -19,5 +19,10 @@ export class Player extends Entity {
     get camera(): Camera {
         return this.cam;
     }
+
+    turn(da: number) {
+        this.cam.turn(da);
+    }
+
 }
 
