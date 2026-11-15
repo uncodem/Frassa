@@ -54,7 +54,7 @@ export class Raycaster {
     public getFrame(x: number, y: number, camera: Camera): RayHit[] {
         const ret: RayHit[] = [];
         for (let i = 0; i < this.screenWidth; i++) {
-            const camX = (2 * i) / this.screenWidth;
+            const camX = (2 * i) / this.screenWidth - 1;
             const rel = Math.atan(camX * Math.tan(camera.FOV / 2));
             const a = camera.angle + rel;
 
