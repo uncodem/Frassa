@@ -1,7 +1,7 @@
 
 export class Camera {
     public constructor(
-        public readonly FOV: number = 90,
+        public readonly FOV: number = Math.PI / 2,
         public angle: number = 0,
     ) {}
 }
