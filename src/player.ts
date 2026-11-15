@@ -13,8 +13,8 @@ export class Player extends Entity {
         y: number,
         w: number,
         h: number,
-        private moveSpeed: number = 0.5,
-        private turnSpeed: number = 0.1,
+        private moveSpeed: number = 3,
+        private turnSpeed: number = 2.5,
     ) {
         super(x,y,w,h);
         this.pages = 0;

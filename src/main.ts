@@ -24,17 +24,21 @@ const renderer = new Renderer(canvas);
 
 const keys = new Set<string>();
 
-function handleInput(): void {
-    if (keys.has("w")) player.move(level, 0.5);
-    else if (keys.has("s")) player.move(level, -0.5);
+function handleInput(dt: number): void {
+    if (keys.has("w")) player.move(level, dt);
+    else if (keys.has("s")) player.move(level, -dt);
     
-    if (keys.has("a")) player.turn(-0.5);
-    else if (keys.has("d")) player.turn(0.5);
+    if (keys.has("a")) player.turn(-dt);
+    else if (keys.has("d")) player.turn(dt);
 }
 
-function update(timestamp: DOMHighResTimeStamp) {
+let last = 0;
 
-    handleInput();
+function update(timestamp: DOMHighResTimeStamp) {
+    const dt = Math.min((timestamp - last) / 1000, 0.05);
+    last = timestamp;
+
+    handleInput(dt);
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
     renderer.drawFrame(level, hits);

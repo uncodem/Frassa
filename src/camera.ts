@@ -10,11 +10,7 @@ export class Camera {
     get a(): number { return this.angle; }
 
     public turn(da: number): number {
-        this.angle += da;
-
-        if (this.angle < 0) this.angle += this.TWO_PI;
-        else if (this.angle >= this.TWO_PI) this.angle -= this.TWO_PI;
-
+        this.angle = (((this.angle + da) % this.TWO_PI) + this.TWO_PI) % this.TWO_PI;
         return this.angle;
     }
 }

@@ -12,11 +12,11 @@ export class Entity {
     get tlx(): number { return this.x - this.w / 2; }
     get tly(): number { return this.y - this.h / 2; }
 
-    public tryMove(level: Level, dx: number, dy: number): boolean {
-        let ret = false;
-        if (!level.boxHitsSolid(this.x + dx, this.y, this.w, this.h)) {ret = true; this.x += dx;}
-        if (!level.boxHitsSolid(this.x, this.y + dy, this.w, this.h)) {ret = true; this.y += dy;}
-        return ret;
+    public tryMove(level: Level, dx: number, dy: number): { movedX: boolean; movedY: boolean } {
+        let movedX = false, movedY = false;
+        if (!level.boxHitsSolid(this.x + dx, this.y, this.w, this.h)) {movedX = true; this.x += dx;}
+        if (!level.boxHitsSolid(this.x, this.y + dy, this.w, this.h)) {movedY = true; this.y += dy;}
+        return { movedX, movedY };
     }
 
     public checkCollision(b: Entity): boolean {
