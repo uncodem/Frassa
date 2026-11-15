@@ -4,6 +4,8 @@ import { Camera } from "./camera";
 export class Player extends Entity {
     private pages: number;
     private cam: Camera;
+    private dx: number;
+    private dy: number;
 
     constructor(
         x: number,
@@ -29,5 +31,9 @@ export class Player extends Entity {
         this.dy = Math.sin(na);
     }
 
+    move(amnt: number) {
+        this.x += amnt * this.dx;
+        this.y += amnt * this.dy;
+    }
 }
 

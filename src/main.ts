@@ -23,7 +23,7 @@ const player = new Player(1.5, 1.5, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
 
-function drawFrame(timestamp) {
+function drawFrame(timestamp: DOMHighResTimeStamp) {
     player.turn(0.01);
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
@@ -33,4 +33,8 @@ function drawFrame(timestamp) {
 }
 
 window.requestAnimationFrame(drawFrame);
+
+window.addEventListener("keyup", () => {
+    player.move(4);
+});
 
