@@ -52,13 +52,17 @@ export class Raycaster {
     }
 
     public getFrame(x: number, y: number, camera: Camera): RayHit[] {
+        const ret: RayHit[] = [];
         for (let i = 0; i < this.screenWidth; i++) {
             const camX = (2 * i) / this.screenWidth;
             const rel = Math.atan(camX * Math.tan(camera.FOV / 2));
             const a = camera.angle + rel;
 
-            this.cast(x, y, a);
+            const hit = this.cast(x, y, a);
+            hit.dist *= Math.cos(rel);
+            ret.push(hit);
         }
+        return ret;
     }
 
 }
