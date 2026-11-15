@@ -1,5 +1,6 @@
 import { Entity } from "./entity";
 import { Camera } from "./camera";
+import { Level } from "./level";
 
 export class Player extends Entity {
     private pages: number;
@@ -31,9 +32,8 @@ export class Player extends Entity {
         this.dy = Math.sin(na);
     }
 
-    move(amnt: number) {
-        this.x += amnt * this.dx;
-        this.y += amnt * this.dy;
+    move(level: Level, amnt: number) {
+        this.tryMove(level, this.dx * amnt, this.dy * amnt);
     }
 }
 

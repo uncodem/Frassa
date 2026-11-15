@@ -4,7 +4,6 @@ import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 
 const canvas = document.getElementById("display") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d")!;
 const W = canvas.width, H = canvas.height;
 
 const _ = TileType.Empty, X = TileType.Wall;
@@ -35,6 +34,6 @@ function drawFrame(timestamp: DOMHighResTimeStamp) {
 window.requestAnimationFrame(drawFrame);
 
 window.addEventListener("keyup", () => {
-    player.move(4);
+    player.move(level, 0.5);
 });
 

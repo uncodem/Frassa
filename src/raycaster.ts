@@ -41,7 +41,7 @@ export class Raycaster {
         wallX -= Math.floor(wallX);
 
         if ((side === 0 && dx > 0) || (side === 1 && dy < 0)) wallX = 1 - wallX;
-        
+
         return {
             dist,
             side,

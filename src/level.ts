@@ -36,5 +36,15 @@ export class Level {
     isSolid(x: number, y: number): boolean {
         return TILE_DATA[this.tileAt(x, y)].solid;
     }
+
+    boxHitsSolid(cx: number, cy: number, w: number, h: number): boolean {
+        const x0 = Math.floor(cx - w / 2), x1 = Math.floor(cx + w / 2);
+        const y0 = Math.floor(cy - h / 2), y1 = Math.floor(cy + h / 2);
+        for (let ty = y0; ty <= y1; ty++)
+            for (let tx = x0; tx <= x1; tx++)
+                if (this.isSolid(tx, ty)) return true;
+        return false;
+    }
+
 }
 

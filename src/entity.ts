@@ -1,3 +1,6 @@
+
+import { Level } from "./level";
+
 export class Entity {
     constructor(
         public x: number, // Center x
@@ -8,6 +11,13 @@ export class Entity {
 
     get tlx(): number { return this.x - this.w / 2; }
     get tly(): number { return this.y - this.h / 2; }
+
+    public tryMove(level: Level, dx: number, dy: number): boolean {
+        let ret = false;
+        if (!level.boxHitsSolid(this.x + dx, this.y, this.w, this.h)) {ret = true; this.x += dx;}
+        if (!level.boxHitsSolid(this.x, this.y + dy, this.w, this.h)) {ret = true; this.y += dy;}
+        return ret;
+    }
 
     public checkCollision(b: Entity): boolean {
         return (
