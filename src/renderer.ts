@@ -24,6 +24,7 @@ export class Renderer {
 
         if (props.texture && tryGetTexture(props.texture)) {
             const tex = getTexture(props.texture);
+            const texX = Math.min(tex.width - 1, Math.floor(h.wallX * tex.width));
             if (props.repeat) {
                 for (let k = 0; k < Math.ceil(height); k++) {
                     const f = Math.min(1, height - k);
@@ -59,9 +60,9 @@ export class Renderer {
         this.ctx.fillStyle = "#554"; this.ctx.fillRect(0, H / 2, W, H / 2);
 
         for (let i = 0; i < columns.length; i++) {
-            const column = columns[i]!;
-            for (let j = column.length - 1; j >= 0; j--) {
-                this.drawWallSlice(this.level, hits[j]!, i, horizon, H);
+            const hits = columns[i]!;
+            for (let j = hits.length - 1; j >= 0; j--) {
+                this.drawWallSlice(level, hits[j]!, i, horizon, H);
             }
         }
     }
