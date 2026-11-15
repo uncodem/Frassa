@@ -37,5 +37,13 @@ export class Player extends Entity {
     move(level: Level, amnt: number) {
         this.tryMove(level, this.dx * this.moveSpeed * amnt, this.dy * this.moveSpeed * amnt);
     }
+
+    strafe (level: Level, amnt: number) {
+        const a = this.cam.a;
+        const dx = -Math.sin(a), dy = Math.cos(a);
+        this.tryMove(level, dx * this.moveSpeed * amnt, dy * this.moveSpeed * amnt);
+
+    }
+
 }
 

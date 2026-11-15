@@ -40,7 +40,7 @@ export class Raycaster {
         let wallX = side === 0 ? y + dist * dy : x + dist * dx;
         wallX -= Math.floor(wallX);
 
-        if ((side === 0 && dx > 0) || (side === 1 && dy < 0)) wallX = 1 - wallX;
+        if ((side === 0 && dx < 0) || (side === 1 && dy > 0)) wallX = 1 - wallX;
 
         return {
             dist,
