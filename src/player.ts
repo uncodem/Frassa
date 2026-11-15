@@ -12,7 +12,8 @@ export class Player extends Entity {
         x: number,
         y: number,
         w: number,
-        h: number
+        h: number,
+        private speed: number = 0.5
     ) {
         super(x,y,w,h);
         this.pages = 0;
@@ -33,7 +34,7 @@ export class Player extends Entity {
     }
 
     move(level: Level, amnt: number) {
-        this.tryMove(level, this.dx * amnt, this.dy * amnt);
+        this.tryMove(level, this.dx * this.speed * amnt, this.dy * this.speed * amnt);
     }
 }
 

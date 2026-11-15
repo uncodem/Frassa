@@ -22,18 +22,27 @@ const player = new Player(1.5, 1.5, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
 
-function drawFrame(timestamp: DOMHighResTimeStamp) {
-    player.turn(0.01);
+const keys = new Set<string>();
+
+function handleInput(): void {
+    if (keys.has("w")) player.move(level, 0.5);
+    else if (keys.has("s")) player.move(level, -0.5);
+    
+    if (keys.has("a")) player.turn(-0.1);
+    else if (keys.has("d")) player.turn(0.1);
+}
+
+function update(timestamp: DOMHighResTimeStamp) {
+
+    handleInput();
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
     renderer.drawFrame(level, hits);
 
-    window.requestAnimationFrame(drawFrame);
+    window.requestAnimationFrame(update);
 }
 
-window.requestAnimationFrame(drawFrame);
+window.requestAnimationFrame(update);
 
-window.addEventListener("keyup", () => {
-    player.move(level, 0.5);
-});
-
+window.addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
+window.addEventListener("keyup", (e: KeyboardEvent) => keys.delete(e.key.toLowerCase()));
