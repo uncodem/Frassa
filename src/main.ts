@@ -28,8 +28,8 @@ function handleInput(): void {
     if (keys.has("w")) player.move(level, 0.5);
     else if (keys.has("s")) player.move(level, -0.5);
     
-    if (keys.has("a")) player.turn(-0.1);
-    else if (keys.has("d")) player.turn(0.1);
+    if (keys.has("a")) player.turn(-0.5);
+    else if (keys.has("d")) player.turn(0.5);
 }
 
 function update(timestamp: DOMHighResTimeStamp) {

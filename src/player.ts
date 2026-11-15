@@ -13,7 +13,8 @@ export class Player extends Entity {
         y: number,
         w: number,
         h: number,
-        private speed: number = 0.5
+        private moveSpeed: number = 0.5,
+        private turnSpeed: number = 0.1,
     ) {
         super(x,y,w,h);
         this.pages = 0;
@@ -28,13 +29,13 @@ export class Player extends Entity {
     }
 
     turn(da: number) {
-        const na = this.cam.turn(da);
+        const na = this.cam.turn(da * this.turnSpeed);
         this.dx = Math.cos(na);
         this.dy = Math.sin(na);
     }
 
     move(level: Level, amnt: number) {
-        this.tryMove(level, this.dx * this.speed * amnt, this.dy * this.speed * amnt);
+        this.tryMove(level, this.dx * this.moveSpeed * amnt, this.dy * this.moveSpeed * amnt);
     }
 }
 
