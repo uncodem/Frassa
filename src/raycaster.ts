@@ -69,9 +69,7 @@ export class Raycaster {
             const rel = Math.atan(camX * Math.tan(camera.FOV / 2));
             const a = camera.a + rel;
 
-            const hits = this.cast(x, y, a);
-            for (const hit of hits)
-                hit.dist *= Math.cos(rel);
+            const hits = this.cast(x, y, a, Math.cos(rel));
             ret.push(hits);
         }
         return ret;
