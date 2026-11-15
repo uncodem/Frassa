@@ -1,7 +1,7 @@
 
 import type { RayHit } from "./raycaster";
 import { Level, TILE_DATA } from "./level";
-import { getTexture } from "./asset";
+import { getTexture, tryGetTexture } from "./asset";
 
 export class Renderer {
     private readonly ctx: CanvasRenderingContext2D;
@@ -25,7 +25,7 @@ export class Renderer {
             const top = H / 2 - lineH / 2;
             const props = TILE_DATA[level.tileAt(h.tileX, h.tileY)];
 
-            if (props.texture) {
+            if (props.texture && tryGetTexture(props.texture)) {
                 const tex = getTexture(props.texture);
                 const texX = Math.min(tex.width - 1, Math.floor(h.wallX * tex.width));
                 this.ctx.drawImage(tex, texX, 0, 1, tex.height, i, top, 1, lineH);

@@ -34,4 +34,9 @@ export function getTexture(id: TextureId): HTMLImageElement {
     return img;
 }
 
+export function tryGetTexture(id: TextureId): boolean {
+    const img = loaded.get(id);
+    if (!img) return false;
+    return true;
+}
 

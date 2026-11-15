@@ -12,13 +12,14 @@ export type TileType = (typeof TileType)[keyof typeof TileType];
 export interface TileProperties {
     solid: boolean;
     color: string;
+    height: number;
     texture?: TextureId;
 }
 
 export const TILE_DATA: Record<TileType, TileProperties> = {
-    [TileType.Empty] : { solid: false, color: "#000" },
-    [TileType.Wall]: { solid: true, color: "red", texture: TextureId.Wall },
-    [TileType.Wall2]: { solid: true, color: "blue", texture: TextureId.Wall2 },
+    [TileType.Empty] : { solid: false, height: 1, color: "#000" },
+    [TileType.Wall]: { solid: true, height: 1, color: "red", texture: TextureId.Wall },
+    [TileType.Wall2]: { solid: true, height: 2, color: "blue", texture: TextureId.Wall2 },
 } satisfies Record<TileType, TileProperties>;
 
 export class Level {
