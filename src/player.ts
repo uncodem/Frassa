@@ -14,6 +14,9 @@ export class Player extends Entity {
         super(x,y,w,h);
         this.pages = 0;
         this.cam = new Camera();
+
+        this.dx = 1;
+        this.dy = 0;
     }
 
     get camera(): Camera {
@@ -21,7 +24,9 @@ export class Player extends Entity {
     }
 
     turn(da: number) {
-        this.cam.turn(da);
+        const na = this.cam.turn(da);
+        this.dx = Math.cos(na);
+        this.dy = Math.sin(na);
     }
 
 }
