@@ -4,8 +4,10 @@ export class Camera {
 
     public constructor(
         public readonly FOV: number = Math.PI / 2,
-        public angle: number = 0,
+        private angle: number = 0,
     ) {}
+
+    get a(): number { return this.angle; }
 
     public turn(da: number): number {
         this.angle += da;
