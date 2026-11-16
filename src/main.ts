@@ -4,6 +4,7 @@ import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 import { loadAssets, TextureId } from "./asset";
 import { Sprite } from "./sprite";
+import { Bot } from "./bot";
 
 await loadAssets();
 
@@ -33,6 +34,7 @@ const player = new Player(2, 2, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
 const sprite = new Sprite(3.5,2.5,1,1,TextureId.Platypus,"magenta",1);
+const bot = new Bot(player,3.5,2.5,1,1,"magenta",TextureId.Platypus,1);
 
 const keys = new Set<string>();
 
@@ -45,6 +47,8 @@ function handleInput(dt: number): void {
 
     if (keys.has("arrowleft")) player.turn(-dt);
     else if (keys.has("arrowright")) player.turn(dt);
+
+    if (keys.has("q")) bot.update();
 }
 
 let last = 0;
@@ -62,7 +66,7 @@ function update(timestamp: DOMHighResTimeStamp) {
     }
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
-    renderer.drawFrame(player, level, [sprite], hits);
+    renderer.drawFrame(player, level, [bot], hits);
 
     window.requestAnimationFrame(update);
 }
