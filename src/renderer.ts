@@ -39,47 +39,7 @@ export class Renderer {
             scale,
             width,
         };
-    }
-
-    private drawSprites(level: Level, columns: RayHit[][], projected: ProjectedSprite[], W: number, H: number) {
-        const ctx = this.ctx;
-        const horizon = H / 2;
-        projected.sort((a, b) => b.depth - a.depth);
-
-        for (const p of projected) {
-            const s = p.sprite;
-            const tex = (s.texture && tryGetTexture(s.texture)) ? getTexture(s.texture) : undefined;
-
-            const spriteH = s.worldHeight * p.scale;
-            const bottom = horizon + EYE * p.scale;
-            const top = bottom - spriteH;
-            const left = p.screenX - p.width / 2;
-
-            const x0 = Math.max(0, Math.floor(left));
-            const x1 = Math.min(W - 1, Math.floor(left + p.width));
-
-            for (let x = x0; x <= x1; x++) {
-                let clipTop = Infinity;
-                for (const hit of columns[x]!) {
-                    if (hit.dist >= p.depth) break;
-                    if (!TILE_DATA[level.tileAt(hit.tileX, hit.tileY)].transparent)
-                        clipTop = horizon - (hit.height - EYE) * (H / hit.dist);
-                }
-                const visBottom = Math.min(bottom, clipTop);
-                if (visBottom <= top) continue;
-                if (tex) {
-                    const frac = (visBottom - top) / spriteH;
-                    const texX = Math.min(tex.width - 1, Math.floor(((x - left) / p.width) * tex.width));
-                    ctx.drawImage(tex, texX, 0, 1, tex.height * frac, x, top, 1, visBottom - top);
-                } else {
-                    ctx.fillStyle = s.color;
-                    ctx.fillRect(x, top, 1, visBottom - top);
-                }
-            }
-
-        }
-
-    }
+    } 
 
     private drawWallSlice(level: Level, h: RayHit, x: number, horizon: number, H: number) {
         const ctx = this.ctx;
@@ -119,6 +79,22 @@ export class Renderer {
         }
     }
 
+    private drawSpriteSlice(p: ProjectedSprite, x: number, horizon: number) {
+        const s = p.sprite, ctx = this.ctx;
+        const bottom = horizon + EYE * p.scale;
+        const top = bottom - s.worldHeight * p.scale;
+        const left = p.screenX - p.width / 2;
+        const tex = (s.texture && tryGetTexture(s.texture)) ? getTexture(s.texture) : undefined;
+
+        if (tex) {
+            const texX = Math.min(tex.width - 1, Math.floor(((x - left) / p.width)  * tex.width));
+            ctx.drawImage(tex, texX, 0, 1, tex.height, x, top, 1, bottom - top);
+        } else {
+            ctx.fillStyle = s.color;
+            ctx.fillRect(x, top, 1, bottom - top);
+        }
+    }
+
     drawFrame(p: Player, level: Level, sprites: Sprite[], columns: RayHit[][]) {
         const W = this.canvas.width;
         const H = this.canvas.height;
@@ -127,21 +103,33 @@ export class Renderer {
         this.ctx.fillStyle = "#334"; this.ctx.fillRect(0, 0, W, H / 2);
         this.ctx.fillStyle = "#554"; this.ctx.fillRect(0, H / 2, W, H / 2);
 
-        for (let i = 0; i < columns.length; i++) {
-            const hits = columns[i]!;
-            for (let j = hits.length - 1; j >= 0; j--) {
-                this.drawWallSlice(level, hits[j]!, i, horizon, H);
+        const projected: ProjectedSprite[] = [];
+        for (const s of sprites) {
+            const r = this.projectSprite(p, W, H, p.camera.FOV, s);
+            if (r) projected.push(r);
+        }
+        projected.sort((a, b) => b.depth - a.depth);
+
+        const buckets: ProjectedSprite[][] = Array.from({ length: W }, () => []);
+        for (const ps of projected) {
+            const left = ps.screenX - ps.width / 2;
+            const x0 = Math.max(0, Math.floor(left));
+            const x1 = Math.min(W - 1, Math.floor(left + ps.width));
+            for (let x = x0; x <= x1; x++) buckets[x]!.push(ps);
+        }
+
+        for (let x = 0; x < columns.length; x++) {
+            const hits = columns[x]!;
+            const sp = buckets[x]!;
+            let h = hits.length - 1;
+            let s = 0;
+
+            while (h >= 0 || s < sp.length) {
+                const wallDepth = h >= 0 ? hits[h]!.dist : -Infinity;
+                const spriteDepth = s < sp.length ? sp[s]!.depth : -Infinity;
+                if (wallDepth >= spriteDepth) this.drawWallSlice(level, hits[h--]!, x, horizon, H);
+                else this.drawSpriteSlice(sp[s++]!, x, horizon);
             }
         }
-
-        const projected: ProjectedSprite[] = [];
-
-        for (let i = 0; i < sprites.length; i++) {
-            const result = this.projectSprite(p, W, H, p.camera.FOV, sprites[i]!);
-            if (result !== null) projected.push(result);
-        }
-
-        this.drawSprites(level, columns, projected, W, H);
-
     }
 }

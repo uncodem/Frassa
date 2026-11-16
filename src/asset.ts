@@ -5,6 +5,7 @@ export const TextureId = {
     Wall2: "wall2",
     Wall3: "wall3",
     Glass: "glass",
+    Platypus: "platypus"
 } as const;
 export type TextureId = (typeof TextureId)[keyof typeof TextureId];
 
@@ -13,6 +14,7 @@ const FILES: Record<TextureId, string> = {
     [TextureId.Wall2]: "wall2.png",
     [TextureId.Wall3]: "wall3.png",
     [TextureId.Glass]: "glass.png",
+    [TextureId.Platypus]: "platypus.png",
 };
 
 const loaded = new Map<TextureId, HTMLImageElement>();

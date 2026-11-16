@@ -2,7 +2,7 @@ import { Level, TileType, TILE_DATA } from "./level";
 import { Player } from "./player";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
-import { loadAssets } from "./asset";
+import { loadAssets, TextureId } from "./asset";
 import { Sprite } from "./sprite";
 
 await loadAssets();
@@ -32,7 +32,7 @@ const level = new Level([
 const player = new Player(2, 2, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
-const sprite = new Sprite(5,3,0.4,0.4);
+const sprite = new Sprite(3.5,2.5,1,1,TextureId.Platypus,"magenta",1);
 
 const keys = new Set<string>();
 
