@@ -16,7 +16,7 @@ export class Renderer {
         this.ctx = ctx;
     } 
 
-    projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
+    private projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
         const rx = sprite.x - p.x, ry = sprite.y - p.y;
         const depth = rx * p.dirX + ry * p.dirY;
         const lateral = ry * p.dirX - rx * p.dirY;
@@ -24,10 +24,11 @@ export class Renderer {
         if (depth <= 0.1 || depth > MAX_DIST) return null;
 
         const screenX = W / 2 * (1 + lateral / (depth * Math.tan(fov/2)));
-        const scale = W / (2 * Math.tan(fov / 2)) / depth;
+        const scale = H / depth;
 
         // TODO: Support non-square sprites
-        const width = sprite.worldHeight * scale;
+        const hScale = W / (2 * Math.tan(fov / 2)) / depth
+        const width = sprite.worldHeight * hScale;
 
         if (screenX + width/2 < 0 || screenX - width/2 > W) return null;
 
@@ -38,6 +39,46 @@ export class Renderer {
             scale,
             width,
         };
+    }
+
+    private drawSprites(level: Level, columns: RayHit[][], projected: ProjectedSprite[], W: number, H: number) {
+        const ctx = this.ctx;
+        const horizon = H / 2;
+        projected.sort((a, b) => b.depth - a.depth);
+
+        for (const p of projected) {
+            const s = p.sprite;
+            const tex = s.texture ? tryGetTexture(s.texture) : undefined;
+
+            const spriteH = s.worldHeight * p.scale;
+            const bottom = horizon + EYE * p.scale;
+            const top = bottom - spriteH;
+            const left = p.screenX - p.width / 2;
+
+            const x0 = Math.max(0, Math.floor(left));
+            const x1 = Math.min(W - 1, Math.floor(left + p.width));
+
+            for (let x = x0; x <= x1; x++) {
+                let clipTop = Infinity;
+                for (const hit of columns[x]!) {
+                    if (hit.dist >= p.depth) break;
+                    if (!TILE_DATA[level.tileAt(hit.tileX, hit.tileY)].transparent)
+                        clipTop = horizon - (hit.height - EYE) * (H / hit.dist);
+                }
+                const visBottom = Math.min(bottom, clipTop);
+                if (visBottom <= top) continue;
+                if (tex) {
+                    const frac = (visBottom - top) / spriteH;
+                    const texX = Math.min(tex.width - 1, Math.floor(((x - left) / p.width) * tex.width));
+                    ctx.drawImage(tex, texX, 0, 1, tex.height * frac, x, top, 1, visBottom - top);
+                } else {
+                    ctx.fillStyle = s.color;
+                    ctx.fillRect(x, top, 1, visBottom - top);
+                }
+            }
+
+        }
+
     }
 
     private drawWallSlice(level: Level, h: RayHit, x: number, horizon: number, H: number) {
