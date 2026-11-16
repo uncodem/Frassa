@@ -16,6 +16,19 @@ const FILES: Record<TextureId, string> = {
 };
 
 const loaded = new Map<TextureId, HTMLImageElement>();
+const loadedDark = new Map<TextureId, HTMLCanvasElement>();
+
+function makeDark(img: HTMLImageElement): HTMLCanvasElement {
+    const ret = document.createElement("canvas");
+    ret.width = img.width; ret.height = img.height;
+    const ctx = ret.getContext("2d");
+    if (!ctx) throw new Error("makeDark: Could not get 2d canvas context.");
+    ctx.drawImage(img, 0, 0);
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0,0,ret.width, ret.height);
+    return ret;
+}
 
 function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -29,7 +42,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export async function loadAssets(): Promise<void> {
     const entries = Object.entries(FILES) as [TextureId, string][];
     const imgs = await Promise.all(entries.map(([, f]) => loadImage(asset(f))));
-    entries.forEach(([id], i) => loaded.set(id, imgs[i]!));
+    entries.forEach(([id], i) => {
+        loaded.set(id, imgs[i]!);
+        loadedDark.set(id, makeDark(imgs[i]!));
+    })
 }
 
 export function getTexture(id: TextureId): HTMLImageElement {
@@ -42,5 +58,9 @@ export function tryGetTexture(id: TextureId): boolean {
     const img = loaded.get(id);
     if (!img) return false;
     return true;
+}
+
+export function tryGetDarkTexture(id: TextureId): HTMLCanvasElement | undefined {
+    return loadedDark.get(id);
 }
 

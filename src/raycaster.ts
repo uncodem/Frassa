@@ -60,8 +60,6 @@ export class Raycaster {
             }
 
             if (!props.transparent && props.height >= this.level.maxHeight) break;
-
-            if (height >= this.level.maxHeight) break;
         }
         return hits;
     }
