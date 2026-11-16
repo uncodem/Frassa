@@ -16,18 +16,20 @@ export class Renderer {
         this.ctx = ctx;
     } 
 
-    private projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
-        const rx = sprite.x - p.dirX, ry = sprite.y - p.dirY;
+    projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
+        const rx = sprite.x - p.x, ry = sprite.y - p.y;
         const depth = rx * p.dirX + ry * p.dirY;
         const lateral = ry * p.dirX - rx * p.dirY;
 
-        const screenX = W / 2 * (1 + lateral / (depth * Math.tan(fov/2)));
-        const scale = H / depth;
-
         if (depth <= 0.1 || depth > MAX_DIST) return null;
+
+        const screenX = W / 2 * (1 + lateral / (depth * Math.tan(fov/2)));
+        const scale = W / (2 * Math.tan(fov / 2)) / depth;
 
         // TODO: Support non-square sprites
         const width = sprite.worldHeight * scale;
+
+        if (screenX + width/2 < 0 || screenX - width/2 > W) return null;
 
         return {
             sprite,

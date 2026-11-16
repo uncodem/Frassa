@@ -3,6 +3,7 @@ import { Player } from "./player";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 import { loadAssets } from "./asset";
+import { Sprite } from "./sprite";
 
 await loadAssets();
 
@@ -28,9 +29,10 @@ const level = new Level([
     [0, 0, 0, 0, 3, 0, 0, 0, 0],
 ]);
 
-const player = new Player(1.5, 1.5, 0.3, 0.3);   // tile center
+const player = new Player(2, 2, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
+const sprite = new Sprite(5,3,0.4,0.4);
 
 const keys = new Set<string>();
 
