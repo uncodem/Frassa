@@ -62,7 +62,7 @@ function update(timestamp: DOMHighResTimeStamp) {
     }
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
-    renderer.drawFrame(level, hits);
+    renderer.drawFrame(player, level, [sprite], hits);
 
     window.requestAnimationFrame(update);
 }

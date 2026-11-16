@@ -48,7 +48,7 @@ export class Renderer {
 
         for (const p of projected) {
             const s = p.sprite;
-            const tex = s.texture ? tryGetTexture(s.texture) : undefined;
+            const tex = (s.texture && tryGetTexture(s.texture)) ? getTexture(s.texture) : undefined;
 
             const spriteH = s.worldHeight * p.scale;
             const bottom = horizon + EYE * p.scale;
@@ -119,7 +119,7 @@ export class Renderer {
         }
     }
 
-    drawFrame(level: Level, columns: RayHit[][]) {
+    drawFrame(p: Player, level: Level, sprites: Sprite[], columns: RayHit[][]) {
         const W = this.canvas.width;
         const H = this.canvas.height;
         const horizon = H / 2;
@@ -133,6 +133,15 @@ export class Renderer {
                 this.drawWallSlice(level, hits[j]!, i, horizon, H);
             }
         }
+
+        const projected: ProjectedSprite[] = [];
+
+        for (let i = 0; i < sprites.length; i++) {
+            const result = this.projectSprite(p, W, H, p.camera.FOV, sprites[i]!);
+            if (result !== null) projected.push(result);
+        }
+
+        this.drawSprites(level, columns, projected, W, H);
+
     }
 }
-
