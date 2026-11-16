@@ -1,4 +1,4 @@
-
+import type { TextureId } from "./asset";
 import { Entity } from "./entity";
 
 export class Sprite extends Entity {

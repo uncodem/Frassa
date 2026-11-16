@@ -28,6 +28,9 @@ export class Player extends Entity {
         return this.cam;
     }
 
+    get dirX(): number { return this.dx; }
+    get dirY(): number { return this.dy; }
+
     turn(da: number) {
         const na = this.cam.turn(da * this.turnSpeed);
         this.dx = Math.cos(na);

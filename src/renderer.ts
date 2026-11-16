@@ -1,8 +1,11 @@
 
 import type { RayHit } from "./raycaster";
-import { EYE } from "./raycaster";
+import { EYE, MAX_DIST } from "./raycaster";
 import { Level, TILE_DATA } from "./level";
 import { getTexture, tryGetTexture, tryGetDarkTexture } from "./asset";
+import { Player } from "./player";
+import { Sprite } from "./sprite";
+import type { ProjectedSprite } from "./sprite";
 
 export class Renderer {
     private readonly ctx: CanvasRenderingContext2D;
@@ -12,6 +15,28 @@ export class Renderer {
         if (!ctx) throw new Error("Could not get 2d <canvas> context.");
         this.ctx = ctx;
     } 
+
+    private projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
+        const rx = sprite.x - p.dirX, ry = sprite.y - p.dirY;
+        const depth = rx * p.dirX + ry * p.dirY;
+        const lateral = ry * p.dirX - rx * p.dirY;
+
+        const screenX = W / 2 * (1 + lateral / (depth * Math.tan(fov/2)));
+        const scale = H / depth;
+
+        if (depth <= 0.1 || depth > MAX_DIST) return null;
+
+        // TODO: Support non-square sprites
+        const width = sprite.worldHeight * scale;
+
+        return {
+            sprite,
+            depth,
+            screenX,
+            scale,
+            width,
+        };
+    }
 
     private drawWallSlice(level: Level, h: RayHit, x: number, horizon: number, H: number) {
         const ctx = this.ctx;
