@@ -48,7 +48,7 @@ function handleInput(dt: number): void {
     if (keys.has("arrowleft")) player.turn(-dt);
     else if (keys.has("arrowright")) player.turn(dt);
 
-    if (keys.has("q")) bot.update();
+    if (keys.has("q")) bot.update(dt);
 }
 
 let last = 0;

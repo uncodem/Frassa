@@ -13,12 +13,12 @@ export class Bot extends Sprite {
         super(x,y,w,h,texture,color,worldHeight);
     }
 
-    update() {
-        if (this.x > this.player.x) this.x -= 0.1;
-        else if (this.x < this.player.x) this.x += 0.1;
+    update(dt: number) {
+        if (this.x > this.player.x) this.x -= dt;
+        else if (this.x < this.player.x) this.x += dt;
 
-        if (this.y > this.player.y) this.y -= 0.1;
-        else if (this.y < this.player.y) this.y += 0.1;
+        if (this.y > this.player.y) this.y -= dt;
+        else if (this.y < this.player.y) this.y += dt;
     }
 }
 
