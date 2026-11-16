@@ -6,6 +6,7 @@ export const TileType = {
     Wall: 1,
     Wall2: 2,
     Wall3: 3,
+    Glass: 4,
 } as const;
 
 export type TileType = (typeof TileType)[keyof typeof TileType];
@@ -24,6 +25,7 @@ export const TILE_DATA: Record<TileType, TileProperties> = {
     [TileType.Wall]: { solid: true, height: 1, color: "red", texture: TextureId.Wall },
     [TileType.Wall2]: { solid: true, height: 2, color: "blue", repeat: true, texture: TextureId.Wall2 },
     [TileType.Wall3]: { solid: true, height: 15, color: "yellow", texture: TextureId.Wall3 },
+    [TileType.Glass]: { solid: true, height: 1, color: "rgba(0,0,0,0.5)", transparent: true, texture: TextureId.Glass }
 } satisfies Record<TileType, TileProperties>;
 
 export class Level {
