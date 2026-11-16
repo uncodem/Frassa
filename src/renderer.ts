@@ -13,6 +13,18 @@ export class Renderer {
         this.ctx = ctx;
     }
 
+    private makeDark(img: HTMLImageElement): HTMLCanvasElement {
+        const ret = document.createElement("canvas");
+        ret.width = img.width; ret.height = img.height;
+        const ctx = ret.getContext("2d");
+        if (!ctx) throw new Error("makeDark: Could not get 2d canvas context.");
+        ctx.drawImage(img, 0, 0);
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(0,0,ret.width, ret.height);
+        return ret;
+    }
+
     private drawWallSlice(level: Level, h: RayHit, x: number, horizon: number, H: number) {
         const ctx = this.ctx;
         const props = TILE_DATA[level.tileAt(h.tileX, h.tileY)];
@@ -21,9 +33,10 @@ export class Renderer {
         const scale = H / Math.max(h.dist, 0.0001);
         const bottom = horizon + EYE * scale;
         const top = horizon - (height - EYE) * scale;
+        const textured = props.texture && tryGetTexture(props.texture);
 
-        if (props.texture && tryGetTexture(props.texture)) {
-            const tex = getTexture(props.texture);
+        if (textured) {
+            const tex = getTexture(props.texture!);
             const texX = Math.min(tex.width - 1, Math.floor(h.wallX * tex.width));
             if (props.repeat) {
                 for (let k = 0; k < Math.ceil(height); k++) {
@@ -39,16 +52,17 @@ export class Renderer {
             } else {
                 ctx.drawImage(tex, texX, 0, 1, tex.height, x, top, 1, bottom - top);
             }
+            if (h.side === 1) {
+                // ctx.drawImage(this.makeDark(tex), texX, 0, 1, tex.height, x, top, 1, bottom - top);
+            }
         } else {
             ctx.fillStyle = props.color;
             ctx.fillRect(x, top, 1, bottom - top);
+            if (h.side === 1) {
+                ctx.fillStyle = "rgba(0,0,0,0.35)";
+                ctx.fillRect(x, top, 1, bottom - top);
+            }
         }
-
-        if (h.side === 1) {
-            ctx.fillStyle = "rgba(0,0,0,0.35)";
-            ctx.fillRect(x, top, 1, bottom - top);
-        }
-
     }
 
     drawFrame(level: Level, columns: RayHit[][]) {
