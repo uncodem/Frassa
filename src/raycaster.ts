@@ -46,7 +46,8 @@ export class Raycaster {
 
             if (!this.level.isSolid(mapX, mapY)) continue;
 
-            const height = TILE_DATA[this.level.tileAt(mapX, mapY)].height;
+            const props = TILE_DATA[this.level.tileAt(mapX, mapY)];
+            const height = props.height;
             const top = (height - EYE) / dist;
 
             if (top > highest) {
@@ -55,8 +56,11 @@ export class Raycaster {
                 if ((side === 0 && dx < 0) || (side === 1 && dy > 0)) wallX = 1 - wallX;
 
                 hits.push({ dist, side, tileX: mapX, tileY: mapY, wallX, height });
-                highest = top;
+                if(!props.transparent) highest = top;
             }
+
+            if (!props.transparent && props.height >= this.level.maxHeight) break;
+
             if (height >= this.level.maxHeight) break;
         }
         return hits;

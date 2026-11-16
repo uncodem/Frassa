@@ -16,6 +16,7 @@ export interface TileProperties {
     height: number;
     texture?: TextureId;
     repeat?: boolean;
+    transparent?: boolean;
 }
 
 export const TILE_DATA: Record<TileType, TileProperties> = {
