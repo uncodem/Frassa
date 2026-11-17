@@ -25,7 +25,7 @@ export class Game {
         this.renderer = new Renderer(canvas);
         this.nav = new NavGrid(currentLevel);
         this.raycaster = new Raycaster(currentLevel, this.canvas.width);
-        this.nav.compute(this.player.x, this.player.y);
+        this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
     }
 
     setLevel(level: Level) {
@@ -34,7 +34,7 @@ export class Game {
         this.nav = new NavGrid(level);
         this.raycaster = new Raycaster(this.currentLevel, this.canvas.width);
 
-        this.nav.compute(this.player.x, this.player.y);
+        this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
     }
 
     handleInput(dt: number) {
@@ -63,8 +63,8 @@ export class Game {
             this.mouseTurn = 0;
         }
 
-        this.bots[0]!.update(dt, this.nav);
-        
+        for (const bot of this.bots) bot.update(dt, this.nav);
+
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
         this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites], hits);
 
