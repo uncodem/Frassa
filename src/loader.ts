@@ -18,7 +18,7 @@ export interface World {
 export type MapCommand = 
     | { type: "player"; x: number; y: number; angle?: number }
     | { type: "bot"; x: number; y: number; w: number; h: number; speed: number; color: string, worldHeight: number, behavior?: string; texture?: string }
-    | { type: "pickup"; kind: "page" | "key"; x: number; y: number }
+    | { type: "pickup"; kind: string; x: number; y: number }
     | { type: "sprite"; x: number; y: number; w: number; h: number; color?: string; texture?: string; worldHeight?: number }
     | { type: "stairs"; x: number; y: number; to: number };
 
@@ -73,6 +73,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
 
     const bots: Bot[] = [];
     const sprites: Sprite[] = [];
+    const pickups: Pickup[] = [];
 
     // TODO: Allow textured pickups
     for (const cmd of world.spawnList) {
@@ -89,7 +90,9 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
                 sprites.push(new Sprite(cmd.x+0.5, cmd.y+0.5, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
                 break;
             case "pickup":
-                
+                if (!isPickupType(cmd.kind))
+                    throw new Error("Pickup spawn command contains invalid type");
+                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x, cmd.y, undefined, (cmd.kind === PickupType.Page) ? "red" : "gold"));
                 break;
         }
     }
@@ -97,6 +100,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
         player,
         bots,
         sprites,
+        pickups,
     };
 }
 

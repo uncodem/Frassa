@@ -33,19 +33,26 @@ const testJson = `
       ],
       "commands": [
         {"type":"player","x":2,"y":2},
-        {"type":"sprite","x":4,"y":10,"w":0.4,"h":0.4,"worldHeight":4,"texture":"platypus"},
+        {"type":"pickup","kind":"page","x":5,"y":4},
+        {"type":"pickup","kind":"page","x":3,"y":4},
+        {"type":"pickup","kind":"page","x":7,"y":7},
+        {"type":"pickup","kind":"page","x":1,"y":7},
+        {"type":"pickup","kind":"page","x":1,"y":1},
+        {"type":"pickup","kind":"page","x":7,"y":1},
+        {"type":"pickup","kind":"key","x":4,"y":7},
+        {"type":"sprite","x":4,"y":10,"w":0.4,"h":0.4,"texture":"platypus","worldHeight":4},
         {"type":"sprite","x":4,"y":4,"w":0.4,"h":0.4,"texture":"wall3","worldHeight":0.6},
-        {"type":"bot","x":6,"y":2,"w":0.4,"h":0.4,"speed":2.2,"texture":"platypus","worldHeight":1}
+        {"type":"bot","x":6,"y":2,"w":0.4,"h":0.4,"speed":2.2,"color":"magenta","worldHeight":1,"texture":"platypus"}
       ]
     }
 `;
 
 const world = parseMap(testJson);
 
-const {player, bots, sprites} = spawnWorld(world);
+const {player, bots, sprites, pickups} = spawnWorld(world);
 const keys = new Set<string>();
 
-const game = new Game(world.level, player, bots, sprites, canvas, keys);
+const game = new Game(world.level, player, bots, sprites, pickups, canvas, keys);
 window.requestAnimationFrame(game.update);
 
 window.addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));

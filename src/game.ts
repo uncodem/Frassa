@@ -2,12 +2,12 @@
 import { Level } from "./level";
 import { Player } from "./player";
 import { Bot } from "./bot";
-import { Sprite, Pickup } from "./sprite";
+import { Sprite, Pickup, PickupType } from "./sprite";
 import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 
-import type { PickupKind } from "./sprite";
+const PICKUP_RADIUS = 0.5;
 
 export class Game {
     private nav: NavGrid;
@@ -17,7 +17,7 @@ export class Game {
 
     private pages: number = 0;
     private hasKey: boolean = false;
-    
+
     public mouseTurn: number = 0;
 
     constructor(
@@ -73,14 +73,14 @@ export class Game {
         for (const bot of this.bots) bot.update(dt, this.nav);
 
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
-        this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites], hits);
+        this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites, ...this.pickups], hits);
 
         window.requestAnimationFrame(this.update);
     }
 
     private collectPickups() {
         for (let i = this.pickups.length - 1; i >= 0; i--) {
-            const p = this.pickups[i];
+            const p = this.pickups[i]!;
             if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > PICKUP_RADIUS) continue;
             this.pickups.splice(i, 1);
             this.onPickup(p.kind);
