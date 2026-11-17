@@ -4,7 +4,12 @@ import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 import { Player } from "./player";
 import { Sprite } from "./sprite";
-import { loadAssets, tryGetTexture, TextureId } from "./asset";
+import { loadAssets, getTexture, tryGetTexture, TextureId } from "./asset";
+
+// tryGetTexture() only reports whether a texture is loaded; this returns the image itself.
+function texImg(id: string | null | undefined): HTMLImageElement | undefined {
+    return id && tryGetTexture(id as TextureId) ? getTexture(id as TextureId) : undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Model. Mirrors the loader's ParsedWorld:
@@ -477,7 +482,7 @@ function buildPalette() {
         sw.width = sw.height = 32;
         const g = sw.getContext("2d")!;
         g.imageSmoothingEnabled = false;
-        const tex = p.texture ? tryGetTexture(p.texture) : undefined;
+        const tex = texImg(p.texture);
         if (tex) g.drawImage(tex, 0, 0, 32, 32);
         else { g.fillStyle = p.solid ? p.color : "#1b1b23"; g.fillRect(0, 0, 32, 32); }
         const label = document.createElement("span");
@@ -802,7 +807,7 @@ function drawMap() {
             const p = tileProps(id);
             const px = panX + x * zoom, py = panY + y * zoom;
             if (!p) { c.fillStyle = "#f0f"; c.fillRect(px, py, zoom, zoom); continue; }
-            const tex = p.texture ? tryGetTexture(p.texture) : undefined;
+            const tex = texImg(p.texture);
             if (tex) c.drawImage(tex, px, py, zoom, zoom);
             else { c.fillStyle = p.solid ? p.color : "#1b1b23"; c.fillRect(px, py, zoom, zoom); }
             if (p.transparent) {
@@ -836,7 +841,7 @@ function drawMap() {
         if (!inb(e.x, e.y)) continue;
         const cx = panX + (e.x + 0.5) * zoom, cy = panY + (e.y + 0.5) * zoom, r = zoom * 0.38;
         const col = ENT_STYLE[e.type].color;
-        const tex = e.texture ? tryGetTexture(e.texture as TextureId) : undefined;
+        const tex = texImg(e.texture);
         if (tex) {
             c.drawImage(tex, cx - r, cy - r, r * 2, r * 2);
             c.strokeStyle = col;
