@@ -1,12 +1,17 @@
 
+import { Level } from "./level";
+
 export class NavGrid {
     dist: Int32Array;
     private queue: Int32Array;
 
-    constrructor(private level: Level) {
+    constructor(public level: Level) {
         this.dist = new Int32Array(level.width * level.height);
         this.queue = new Int32Array(level.width * level.height);
     }
+
+    get width(): number { return this.level.width; }
+    get height(): number { return this.level.height; }
 
     compute(tx: number, ty: number) {
         const { width: W, height: H } = this.level;
