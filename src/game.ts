@@ -2,16 +2,22 @@
 import { Level } from "./level";
 import { Player } from "./player";
 import { Bot } from "./bot";
-import { Sprite } from "./sprite";
+import { Sprite, Pickup } from "./sprite";
 import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
+
+import type { PickupKind } from "./sprite";
 
 export class Game {
     private nav: NavGrid;
     private raycaster: Raycaster;
     private renderer: Renderer;
     private last: DOMHighResTimeStamp = 0;
+
+    private pages: number = 0;
+    private hasKey: boolean = false;
+    
     public mouseTurn: number = 0;
 
     constructor(
@@ -19,6 +25,7 @@ export class Game {
         public player: Player,
         public bots: Bot[],
         public sprites: Sprite[],
+        public pickups: Pickup[],
         public readonly canvas: HTMLCanvasElement,
         private keyset: Set<string>,
     ) {
@@ -69,6 +76,22 @@ export class Game {
         this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites], hits);
 
         window.requestAnimationFrame(this.update);
+    }
+
+    private collectPickups() {
+        for (let i = this.pickups.length - 1; i >= 0; i--) {
+            const p = this.pickups[i];
+            if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > PICKUP_RADIUS) continue;
+            this.pickups.splice(i, 1);
+            this.onPickup(p.kind);
+        }
+    }
+
+    private onPickup(kind: PickupType) {
+        switch (kind) {
+            case PickupType.Page: this.pages++; break;
+            case PickupType.Key: this.hasKey = true;
+        }
     }
 
 }

@@ -1,7 +1,7 @@
 
 import { Level, TileType } from "./level";
 import { Bot } from "./bot";
-import { Sprite } from "./sprite";
+import { Sprite, Pickup, PickupType } from "./sprite";
 import { Player } from "./player";
 import { TextureId } from "./asset";
 
@@ -37,6 +37,10 @@ function isTextureId(value: unknown): value is TextureId {
     return typeof value === 'string' && (Object.values(TextureId) as string[]).includes(value);
 }
 
+function isPickupType(value: unknown): value is PickupType {
+    return typeof value === 'string' && (Object.values(PickupType) as string[]).includes(value);
+}
+
 export function parseMap(worldString: string): World {
     const parsed = JSON.parse(worldString) as ParsedWorld;
     /* TODO: Make loader accept 2d array instead of 1d
@@ -60,7 +64,7 @@ export function parseMap(worldString: string): World {
     }
 }
 
-export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites: Sprite[]} {
+export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites: Sprite[], pickups: Pickup[]} {
     const pCmd = world.spawnList.find(({type: t}) => t === "player");
     if (!pCmd) throw new Error("World contains no player spawner");
 
@@ -70,6 +74,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
     const bots: Bot[] = [];
     const sprites: Sprite[] = [];
 
+    // TODO: Allow textured pickups
     for (const cmd of world.spawnList) {
         switch (cmd.type) {
             case "player": continue;
@@ -82,6 +87,9 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Sprite spawn command contains invalid texture");
                 sprites.push(new Sprite(cmd.x+0.5, cmd.y+0.5, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
+                break;
+            case "pickup":
+                
                 break;
         }
     }
