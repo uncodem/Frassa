@@ -25,7 +25,7 @@ export type MapCommand =
 interface ParsedWorld {
     width: number;
     height: number;
-    tiles: number[][];
+    tiles: number[];
     commands: MapCommand[];
 };
 
@@ -39,14 +39,20 @@ function isTextureId(value: unknown): value is TextureId {
 
 export function parseMap(worldString: string): World {
     const parsed = JSON.parse(worldString) as ParsedWorld;
+    /* TODO: Make loader accept 2d array instead of 1d
     if (parsed.width !== parsed.tiles[0]!.length || parsed.height !== parsed.tiles.length) {
         console.log(parsed.width, parsed.height, parsed.tiles.length);
         throw new Error("Malformed level string");
     }
+    */
+    if (parsed.tiles.length !== parsed.width * parsed.height) throw new Error("Level string does not conform to dimensions");
+    if (!parsed.tiles.every(isTileType)) throw new Error("Level contains invalid tile data");
 
-    if (!parsed.tiles.every(row => Array.isArray(row) && row.every(isTileType))) throw new Error("Level contains invalid data");
+    const tiles = Array.from({length: Math.ceil(parsed.tiles.length / parsed.width)}, (_, i) => parsed.tiles.slice(i * parsed.width, i * parsed.width + parsed.width));
 
-    const level = new Level(parsed.tiles as TileType[][]);
+//    if (!parsed.tiles.every(row => Array.isArray(row) && row.every(isTileType))) throw new Error("Level contains invalid data");
+
+    const level = new Level(tiles);
 
     return {
         level,
