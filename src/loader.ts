@@ -17,9 +17,9 @@ export interface World {
 
 export type MapCommand = 
     | { type: "player"; x: number; y: number; angle?: number }
-    | { type: "bot"; x: number; y: number; speed: number; behavior?: string; texture?: string }
+    | { type: "bot"; x: number; y: number; w: number; h: number; speed: number; color: string, worldHeight: number, behavior?: string; texture?: string }
     | { type: "pickup"; kind: "page" | "key"; x: number; y: number }
-    | { type: "sprite"; x: number; y: number; texture?: string; worldHeight?: number }
+    | { type: "sprite"; x: number; y: number; w: number; h: number; color?: string; texture?: string; worldHeight?: number }
     | { type: "stairs"; x: number; y: number; to: number };
 
 interface ParsedWorld {
@@ -39,7 +39,10 @@ function isTextureId(value: unknown): value is TextureId {
 
 export function parseMap(worldString: string): World {
     const parsed = JSON.parse(worldString) as ParsedWorld;
-    if (parsed.width !== parsed.tiles[0]!.length || parsed.height !== parsed.tiles.length) throw new Error("Malformed level string");
+    if (parsed.width !== parsed.tiles[0]!.length || parsed.height !== parsed.tiles.length) {
+        console.log(parsed.width, parsed.height, parsed.tiles.length);
+        throw new Error("Malformed level string");
+    }
 
     if (!parsed.tiles.every(row => Array.isArray(row) && row.every(isTileType))) throw new Error("Level contains invalid data");
 
@@ -68,12 +71,12 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
             case "bot": 
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Bot spawn command contains invalid texture");
-                bots.push(new Bot(player, cmd.x, cmd.y, 0.5, 0.5, "magenta", cmd.speed, cmd.texture as TextureId, 1));
+                bots.push(new Bot(player, cmd.x, cmd.y, cmd.w, cmd.h, "magenta", cmd.speed, cmd.texture as TextureId, cmd.worldHeight));
                 break;
             case "sprite":
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Sprite spawn command contains invalid texture");
-                sprites.push(new Sprite(cmd.x, cmd.y, 0.4, 0.4, cmd.texture as TextureId));
+                sprites.push(new Sprite(cmd.x, cmd.y, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
                 break;
         }
     }

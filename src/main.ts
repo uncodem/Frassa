@@ -6,6 +6,8 @@ import { loadAssets, TextureId } from "./asset";
 import { Sprite } from "./sprite";
 import { Bot } from "./bot";
 import { NavGrid } from "./nav";
+import { parseMap, spawnWorld } from "./loader";
+import type { World } from "./loader";
 
 await loadAssets();
 
@@ -14,27 +16,41 @@ const W = canvas.width, H = canvas.height;
 
 const MOUSE_SENS = 0.001;
 
-const _ = TileType.Empty, X = TileType.Wall;
-const level = new Level([
-    [1, 1, 1, 2, 2, 2, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 4, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 4, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 4, 4, 4, 1, 1, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-]);
+const testJson = `
+    {
+      "width": 9,
+      "height": 13,
+      "tiles": [
+        1,1,1,2,2,2,1,1,1,
+        1,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,1,
+        1,0,1,0,4,0,1,0,1,
+        1,0,0,0,0,0,0,0,1,
+        1,0,1,0,4,0,1,0,1,
+        1,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,1,
+        1,1,1,4,4,4,1,1,1,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,3,0,0,0,0
+      ],
+      "commands": [
+        {"type":"player","x":2,"y":2},
+        {"type":"sprite","x":4,"y":10,"worldHeight":0.6},
+        {"type":"sprite","x":4,"y":4,"texture":"wall3","worldHeight":0.6},
+        {"type":"bot","x":6,"y":2,"speed":0,"texture":"platypus"}
+      ]
+    }
+`;
 
-const player = new Player(2, 2, 0.3, 0.3);   // tile center
+const world = parseMap(testJson);
+
+const level = world.level;
+const {player, bots, sprites} = spawnWorld(world);
+
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
-const bot = new Bot(player,3.5,2.5,0.5,0.5,"magenta",2.75,TextureId.Platypus,1);
 const nav = new NavGrid(level);
 
 nav.compute(player.x, player.y);
@@ -70,10 +86,10 @@ function update(timestamp: DOMHighResTimeStamp) {
         mouseTurn = 0;
     }
 
-    bot.update(dt, nav);
+    bots[0].update(dt, nav);
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
-    renderer.drawFrame(player, level, [bot], hits);
+    renderer.drawFrame(player, level, [...bots, ...sprites], hits);
 
     window.requestAnimationFrame(update);
 }
