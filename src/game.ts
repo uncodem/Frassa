@@ -17,6 +17,8 @@ export class Game {
 
     private pages: number = 0;
     private hasKey: boolean = false;
+    // TODO: Add catch consequences
+    private caught: boolean = false;
 
     public mouseTurn: number = 0;
 
@@ -71,7 +73,11 @@ export class Game {
         }
 
         this.collectPickups();
-        for (const bot of this.bots) bot.update(dt, this.nav);
+        this.caught = false;
+        for (const bot of this.bots) {
+            bot.update(dt, this.nav);
+            this.checkCaught(bot);
+        }
 
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
         this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites, ...this.pickups], hits);
@@ -79,6 +85,8 @@ export class Game {
         this.renderer.ctx.font = "24px monospace";
         this.renderer.ctx.fillStyle = "white";
         this.renderer.ctx.fillText(`Pages: ${this.pages}${this.hasKey ? " | key" : ""}`, 8, 32);
+        this.renderer.ctx.fillStyle = "red";
+        this.renderer.ctx.fillText(`${this.caught ? "Caught!" : ""}`, 8, 52);
 
         window.requestAnimationFrame(this.update);
     }
@@ -97,6 +105,11 @@ export class Game {
             case PickupType.Page: this.pages++; break;
             case PickupType.Key: this.hasKey = true;
         }
+    }
+
+    private checkCaught(b: Bot) {
+        if (Math.hypot(b.x - this.player.x, b.y - this.player.y) < CATCH_RADIUS)
+            this.caught = true;
     }
 
 }
