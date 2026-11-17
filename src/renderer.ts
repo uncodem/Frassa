@@ -1,6 +1,6 @@
 
 import type { RayHit } from "./raycaster";
-import { EYE, MAX_DIST } from "./raycaster";
+import { RENDER } from "./constants";
 import { Level, TILE_DATA } from "./level";
 import { getTexture, tryGetTexture, tryGetDarkTexture } from "./asset";
 import { Player } from "./player";
@@ -21,7 +21,7 @@ export class Renderer {
         const depth = rx * p.dirX + ry * p.dirY;
         const lateral = ry * p.dirX - rx * p.dirY;
 
-        if (depth <= 0.1 || depth > MAX_DIST) return null;
+        if (depth <= RENDER.NEAR_CLIP || depth > RENDER.MAX_DIST) return null;
 
         const screenX = W / 2 * (1 + lateral / (depth * Math.tan(fov/2)));
         const scale = H / depth;
@@ -47,8 +47,8 @@ export class Renderer {
         const height = props.height;
 
         const scale = H / Math.max(h.dist, 0.0001);
-        const bottom = horizon + EYE * scale;
-        const top = horizon - (height - EYE) * scale;
+        const bottom = horizon + RENDER.EYE * scale;
+        const top = horizon - (height - RENDER.EYE) * scale;
         const textured = props.texture && tryGetTexture(props.texture);
 
         if (textured) {
@@ -73,7 +73,7 @@ export class Renderer {
             ctx.fillStyle = props.color;
             ctx.fillRect(x, top, 1, bottom - top);
             if (h.side === 1) {
-                ctx.fillStyle = "rgba(0,0,0,0.35)";
+                ctx.fillStyle = `rgba(0,0,0,${RENDER.SIDE_SHADE})`;
                 ctx.fillRect(x, top, 1, bottom - top);
             }
         }
@@ -81,7 +81,7 @@ export class Renderer {
 
     private drawSpriteSlice(p: ProjectedSprite, x: number, horizon: number) {
         const s = p.sprite, ctx = this.ctx;
-        const bottom = horizon + EYE * p.scale;
+        const bottom = horizon + RENDER.EYE * p.scale;
         const top = bottom - s.worldHeight * p.scale;
         const left = p.screenX - p.width / 2;
         const tex = (s.texture && tryGetTexture(s.texture)) ? getTexture(s.texture) : undefined;
@@ -100,8 +100,8 @@ export class Renderer {
         const H = this.canvas.height;
         const horizon = H / 2;
 
-        this.ctx.fillStyle = "#334"; this.ctx.fillRect(0, 0, W, H / 2);
-        this.ctx.fillStyle = "#554"; this.ctx.fillRect(0, H / 2, W, H / 2);
+        this.ctx.fillStyle = RENDER.SKY; this.ctx.fillRect(0, 0, W, H / 2);
+        this.ctx.fillStyle = RENDER.FLOOR; this.ctx.fillRect(0, H / 2, W, H / 2);
 
         const projected: ProjectedSprite[] = [];
         for (const s of sprites) {

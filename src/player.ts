@@ -1,6 +1,7 @@
 import { Entity } from "./entity";
 import { Camera } from "./camera";
 import { Level } from "./level";
+import { PLAYER } from "./constants";
 
 export class Player extends Entity {
     private pages: number;
@@ -13,8 +14,8 @@ export class Player extends Entity {
         y: number,
         w: number,
         h: number,
-        private moveSpeed: number = 3,
-        private turnSpeed: number = 2.5,
+        private moveSpeed: number = PLAYER.MOVE_SPEED,
+        private turnSpeed: number = PLAYER.TURN_SPEED,
     ) {
         super(x,y,w,h);
         this.pages = 0;

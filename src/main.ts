@@ -2,15 +2,18 @@ import { loadAssets, TextureId } from "./asset";
 import { Level, TileType, TILE_DATA } from "./level";
 import { parseMap, spawnWorld } from "./loader";
 import { Game } from "./game";
+import { RENDER, INPUT } from "./constants";
 
 import type { World } from "./loader";
 
 await loadAssets();
 
 const canvas = document.getElementById("display") as HTMLCanvasElement;
-const W = canvas.width, H = canvas.height;
 
-const MOUSE_SENS = 0.001;
+canvas.width = RENDER.WIDTH;
+canvas.height = RENDER.HEIGHT;
+
+const MOUSE_SENS = INPUT.MOUSE_SENSE;
 
 const testJson = `
     {
@@ -62,7 +65,7 @@ canvas.addEventListener("click", () => canvas.requestPointerLock());
 
 document.addEventListener("mousemove", (e: MouseEvent) => {
     if (document.pointerLockElement !== canvas) return;
-    if (Math.abs(e.movementX) >= 200) return;
+    if (Math.abs(e.movementX) >= INPUT.MAX_SPIKE_LIMIT) return;
     game.mouseTurn += e.movementX * MOUSE_SENS;
 })
 

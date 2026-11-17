@@ -1,3 +1,6 @@
+
+import { RENDER } from "./constants";
+
 export const asset = (p: string): string => `${import.meta.env.BASE_URL}assets/${p}`;
 
 export const TextureId = {
@@ -27,7 +30,7 @@ function makeDark(img: HTMLImageElement): HTMLCanvasElement {
     if (!ctx) throw new Error("makeDark: Could not get 2d canvas context.");
     ctx.drawImage(img, 0, 0);
     ctx.globalCompositeOperation = "source-atop";
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillStyle = `rgba(0,0,0,${RENDER.SIDE_SHADE})`;
     ctx.fillRect(0,0,ret.width, ret.height);
     return ret;
 }

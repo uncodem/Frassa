@@ -5,6 +5,8 @@ import { Sprite, Pickup, PickupType } from "./sprite";
 import { Player } from "./player";
 import { TextureId } from "./asset";
 
+import { PLAYER, TILE_CENTER, PICKUP } from "./constants";
+
 export interface MapFile {
     version: 1;
     floors: World[];
@@ -68,7 +70,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
     const pCmd = world.spawnList.find(({type: t}) => t === "player");
     if (!pCmd) throw new Error("World contains no player spawner");
 
-    const player = new Player(pCmd.x+0.5, pCmd.y+0.5, 0.3, 0.3);
+    const player = new Player(pCmd.x+TILE_CENTER, pCmd.y+TILE_CENTER, PLAYER.SIZE, PLAYER.SIZE);
     if (pCmd.type === "player" && pCmd.angle) player.setAngle(pCmd.angle);
 
     const bots: Bot[] = [];
@@ -82,17 +84,17 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
             case "bot": 
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Bot spawn command contains invalid texture");
-                bots.push(new Bot(player, cmd.x+0.5, cmd.y+0.5, cmd.w, cmd.h, "magenta", cmd.speed, cmd.texture as TextureId, cmd.worldHeight));
+                bots.push(new Bot(player, cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, cmd.w, cmd.h, cmd.color, cmd.speed, cmd.texture as TextureId, cmd.worldHeight));
                 break;
             case "sprite":
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Sprite spawn command contains invalid texture");
-                sprites.push(new Sprite(cmd.x+0.5, cmd.y+0.5, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
+                sprites.push(new Sprite(cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
                 break;
             case "pickup":
                 if (!isPickupType(cmd.kind))
                     throw new Error("Pickup spawn command contains invalid type");
-                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+0.5, cmd.y+0.5, undefined, (cmd.kind === PickupType.Page) ? "red" : "gold"));
+                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+0.5, cmd.y+0.5, (cmd.kind === PickupType.Page) ? PICKUP.PAGE_COLOR : PICKUP.KEY_COLOR));
                 break;
         }
     }

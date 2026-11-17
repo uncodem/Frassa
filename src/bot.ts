@@ -3,6 +3,8 @@ import { Sprite } from "./sprite";
 import { Player } from "./player";
 import { NavGrid } from "./nav";
 
+import { TILE_CENTER, ENTITY } from "./constants";
+
 export class Bot extends Sprite {
     constructor(
         private readonly player: Player,
@@ -10,7 +12,7 @@ export class Bot extends Sprite {
         color: string,
         public speed: number,
         texture?: TextureId,
-        worldHeight: number = 0.6,
+        worldHeight: number = ENTITY.WORLD_HEIGHT,
     ) {
         super(x,y,w,h,texture,color,worldHeight);
     }
@@ -32,7 +34,7 @@ export class Bot extends Sprite {
                 const d = nav.dist[ny * W + nx]!;
                 if (d !== -1 && d < best) { best = d; bx = nx; by = ny; }
             }
-            targetX = bx + 0.5; targetY = by + 0.5;
+            targetX = bx + TILE_CENTER; targetY = by + TILE_CENTER;
         }
 
         const dx = targetX - this.x, dy = targetY - this.y;

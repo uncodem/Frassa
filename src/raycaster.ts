@@ -1,6 +1,7 @@
 
 import { Camera } from "./camera";
 import { Level, TileType, TILE_DATA } from "./level";
+import { RENDER } from "./constants";
 
 export interface RayHit {
     dist: number;
@@ -10,12 +11,6 @@ export interface RayHit {
     wallX: number;
     height: number;
 }
-
-export const MAX_STEPS = 64;
-export const MAX_DIST = 24;
-export const MAX_HITS = 8;
-export const EYE = 0.5;
-
 
 export class Raycaster {
     // Class to just store raycaster settings
@@ -33,7 +28,7 @@ export class Raycaster {
 
         let highest = -Infinity;
 
-        for (let n = 0; n < MAX_STEPS && hits.length < MAX_HITS; n++) {
+        for (let n = 0; n < RENDER.MAX_STEPS && hits.length < RENDER.MAX_HITS; n++) {
             let side: 0 | 1;
             if (sideX < sideY) { sideX += deltaX; mapX += stepX; side = 0; }
             else               { sideY += deltaY; mapY += stepY; side = 1; }
@@ -42,13 +37,13 @@ export class Raycaster {
 
             const rawDist = side === 0 ? sideX - deltaX : sideY - deltaY;
             const dist = rawDist * cosRel;               // perpendicular distance
-            if (dist > MAX_DIST) break;
+            if (dist > RENDER.MAX_DIST) break;
 
             if (!this.level.isSolid(mapX, mapY)) continue;
 
             const props = TILE_DATA[this.level.tileAt(mapX, mapY)];
             const height = props.height;
-            const top = (height - EYE) / dist;
+            const top = (height - RENDER.EYE) / dist;
 
             if (top > highest) {
                 let wallX = side === 0 ? y + rawDist * dy : x + rawDist * dx;

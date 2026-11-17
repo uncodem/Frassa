@@ -7,6 +7,8 @@ import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 
+import { GAME, INPUT } from "./constants";
+
 const CATCH_RADIUS = 0.5;
 
 export class Game {
@@ -58,7 +60,7 @@ export class Game {
     }
 
     public update = (timestamp: DOMHighResTimeStamp) => {
-        const dt = Math.min((timestamp - this.last) / 1000, 0.05);
+        const dt = Math.min((timestamp - this.last) / 1000, INPUT.MAX_DT);
         this.last = timestamp;
 
         let ox = Math.floor(this.player.x), oy = Math.floor(this.player.y);
@@ -94,7 +96,7 @@ export class Game {
     private collectPickups() {
         for (let i = this.pickups.length - 1; i >= 0; i--) {
             const p = this.pickups[i]!;
-            if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > CATCH_RADIUS) continue;
+            if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > GAME.PICKUP_RADIUS) continue;
             this.pickups.splice(i, 1);
             this.onPickup(p.kind);
         }
@@ -108,7 +110,7 @@ export class Game {
     }
 
     private checkCaught(b: Bot) {
-        if (Math.hypot(b.x - this.player.x, b.y - this.player.y) < CATCH_RADIUS)
+        if (Math.hypot(b.x - this.player.x, b.y - this.player.y) < GAME.CATCH_RADIUS)
             this.caught = true;
     }
 
