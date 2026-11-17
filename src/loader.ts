@@ -52,7 +52,7 @@ export function parseMap(worldString: string): World {
 
 //    if (!parsed.tiles.every(row => Array.isArray(row) && row.every(isTileType))) throw new Error("Level contains invalid data");
 
-    const level = new Level(tiles);
+    const level = new Level(tiles as TileType[][]);
 
     return {
         level,

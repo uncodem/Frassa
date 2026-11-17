@@ -86,7 +86,7 @@ function update(timestamp: DOMHighResTimeStamp) {
         mouseTurn = 0;
     }
 
-    bots[0].update(dt, nav);
+    bots[0]!.update(dt, nav);
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
     renderer.drawFrame(player, level, [...bots, ...sprites], hits);
