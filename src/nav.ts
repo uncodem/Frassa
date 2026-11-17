@@ -14,6 +14,7 @@ export class NavGrid {
     get height(): number { return this.level.height; }
 
     compute(tx: number, ty: number) {
+        tx = Math.floor(tx); ty = Math.floor(ty);
         const { width: W, height: H } = this.level;
         this.dist.fill(-1);
 

@@ -34,9 +34,10 @@ const level = new Level([
 const player = new Player(2, 2, 0.3, 0.3);   // tile center
 const raycaster = new Raycaster(level, W);
 const renderer = new Renderer(canvas);
-const sprite = new Sprite(3.5,2.5,1,1,TextureId.Platypus,"magenta",1);
-const bot = new Bot(player,3.5,2.5,1,1,"magenta",2.75,TextureId.Platypus,1);
+const bot = new Bot(player,3.5,2.5,0.5,0.5,"magenta",2.75,TextureId.Platypus,1);
 const nav = new NavGrid(level);
+
+nav.compute(player.x, player.y);
 
 const keys = new Set<string>();
 
@@ -58,12 +59,18 @@ function update(timestamp: DOMHighResTimeStamp) {
     const dt = Math.min((timestamp - last) / 1000, 0.05);
     last = timestamp;
 
+    let ox = Math.floor(player.x), oy = Math.floor(player.y);
+
     handleInput(dt);
+
+    if (Math.floor(player.x) !== ox || Math.floor(player.y) !== oy) nav.compute(Math.floor(player.x), Math.floor(player.y));
 
     if (mouseTurn !== 0) { 
         player.turn(mouseTurn); 
         mouseTurn = 0;
     }
+
+    bot.update(dt, nav);
 
     const hits = raycaster.getFrame(player.x, player.y, player.camera);
     renderer.drawFrame(player, level, [bot], hits);
