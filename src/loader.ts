@@ -7,6 +7,7 @@ import { TextureId } from "./asset";
 
 export interface MapFile {
     version: 1;
+    floors: World[];
 }
 
 export interface World {
@@ -16,7 +17,7 @@ export interface World {
 
 export type MapCommand = 
     | { type: "player"; x: number; y: number; angle?: number }
-    | { type: "bot"; x: number; y: number; behavior?: string; speed?: number; texture?: string }
+    | { type: "bot"; x: number; y: number; speed: number; behavior?: string; texture?: string }
     | { type: "pickup"; kind: "page" | "key"; x: number; y: number }
     | { type: "sprite"; x: number; y: number; texture?: string; worldHeight?: number }
     | { type: "stairs"; x: number; y: number; to: number };
@@ -48,5 +49,38 @@ export function parseMap(worldString: string): World {
         level,
         spawnList: parsed.commands,
     }
+}
+
+export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites: Sprite[]} {
+    const pCmd = world.spawnList.find(({type: t}) => t === "player");
+    if (!pCmd) throw new Error("World contains no player spawner");
+
+    const player = new Player(pCmd.x, pCmd.y, 0.3, 0.3);
+    if (pCmd.type === "player" && pCmd.angle) player.turn(pCmd.angle);
+
+    const bots: Bot[] = [];
+    const sprites: Sprite[] = [];
+
+    // TODO: Add custom sizing and colors to bots/sprites
+    for (const cmd of world.spawnList) {
+        switch (cmd.type) {
+            case "player": continue;
+            case "bot": 
+                if (cmd.texture && !isTextureId(cmd.texture))
+                    throw new Error("Bot spawn command contains invalid texture");
+                bots.push(new Bot(player, cmd.x, cmd.y, 0.5, 0.5, "magenta", cmd.speed, cmd.texture as TextureId, 1));
+                break;
+            case "sprite":
+                if (cmd.texture && !isTextureId(cmd.texture))
+                    throw new Error("Sprite spawn command contains invalid texture");
+                sprites.push(new Sprite(cmd.x, cmd.y, 0.4, 0.4, cmd.texture as TextureId));
+                break;
+        }
+    }
+    return {
+        player,
+        bots,
+        sprites,
+    };
 }
 
