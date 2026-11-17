@@ -48,7 +48,7 @@ export class Game {
         else if (this.keyset.has("arrowright")) this.player.turn(dt);
     }
 
-    update(timestamp: DOMHighResTimeStamp) {
+    public update = (timestamp: DOMHighResTimeStamp) => {
         const dt = Math.min((timestamp - this.last) / 1000, 0.05);
         this.last = timestamp;
 
