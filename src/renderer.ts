@@ -8,7 +8,7 @@ import { Sprite } from "./sprite";
 import type { ProjectedSprite } from "./sprite";
 
 export class Renderer {
-    private readonly ctx: CanvasRenderingContext2D;
+    public readonly ctx: CanvasRenderingContext2D;
 
     constructor(private readonly canvas: HTMLCanvasElement) {
         const ctx = canvas.getContext("2d");

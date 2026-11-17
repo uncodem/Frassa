@@ -7,7 +7,7 @@ import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
 
-const PICKUP_RADIUS = 0.5;
+const CATCH_RADIUS = 0.5;
 
 export class Game {
     private nav: NavGrid;
@@ -47,7 +47,7 @@ export class Game {
     handleInput(dt: number) {
         if (this.keyset.has("w")) this.player.move(this.currentLevel, dt);
         else if (this.keyset.has("s")) this.player.move(this.currentLevel, -dt);
-        
+
         if (this.keyset.has("a")) this.player.strafe(this.currentLevel, -dt);
         else if (this.keyset.has("d")) this.player.strafe(this.currentLevel, dt);
 
@@ -76,13 +76,17 @@ export class Game {
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
         this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites, ...this.pickups], hits);
 
+        this.renderer.ctx.font = "24px monospace";
+        this.renderer.ctx.fillStyle = "white";
+        this.renderer.ctx.fillText(`Pages: ${this.pages}${this.hasKey ? " | key" : ""}`, 8, 32);
+
         window.requestAnimationFrame(this.update);
     }
 
     private collectPickups() {
         for (let i = this.pickups.length - 1; i >= 0; i--) {
             const p = this.pickups[i]!;
-            if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > PICKUP_RADIUS) continue;
+            if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > CATCH_RADIUS) continue;
             this.pickups.splice(i, 1);
             this.onPickup(p.kind);
         }
