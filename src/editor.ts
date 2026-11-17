@@ -13,14 +13,15 @@ function texImg(id: string | null | undefined): HTMLImageElement | undefined {
 
 // ---------------------------------------------------------------------------
 // Model. Mirrors the loader's ParsedWorld:
-//   { width, height, tiles: number[], commands: MapCommand[] }
+//   { width, height, tiles: number[] (flat, row-major), commands: MapCommand[] }
 //   { type: "player"; x; y; angle? }
-//   { type: "bot"; x; y; behavior?; speed?; texture? }
+//   { type: "bot"; x; y; w; h; speed; color; worldHeight; behavior?; texture? }
 //   { type: "pickup"; kind: "page" | "key"; x; y }
-//   { type: "sprite"; x; y; texture?; worldHeight? }
+//   { type: "sprite"; x; y; w; h; color?; texture?; worldHeight? }
 //   { type: "stairs"; x; y; to }
 // Coordinates are whole tile units; the game's spawner adds 0.5.
-// Optional fields are omitted from the file when unset.
+// Optional fields are omitted from the file when unset; required ones are always written.
+// Import also accepts tiles as rows (number[][]), for when the loader moves to 2D.
 // ---------------------------------------------------------------------------
 
 type EntType = "player" | "sprite" | "bot" | "pickup" | "stairs";
@@ -37,6 +38,9 @@ interface EntFields {
     speed: number | null;        // bot
     kind: PickupKind;            // pickup
     to: number;                  // stairs: destination floor index
+    color: string | null;        // sprite (optional), bot (required in file)
+    w: number;                   // sprite, bot hitbox width (tiles)
+    h: number;                   // sprite, bot hitbox height (tiles)
 }
 interface Ent extends EntFields {
     type: EntType;
@@ -52,16 +56,19 @@ interface Doc {
 interface Cell { x: number; y: number }
 
 const MAX_SIZE = 100;
-const STORAGE_KEY = "nextbot-editor-doc-v2";
+const STORAGE_KEY = "nextbot-editor-doc-v3";
 const PW = 480, PH = 270;
 
 const ORDER: EntType[] = ["player", "pickup", "stairs", "sprite", "bot"];
 
-const BASE: EntFields = { texture: null, worldHeight: null, angle: null, behavior: null, speed: null, kind: "page", to: 0 };
+const BASE: EntFields = {
+    texture: null, worldHeight: null, angle: null, behavior: null, speed: null,
+    kind: "page", to: 0, color: null, w: 0.3, h: 0.3,
+};
 const DEFAULTS: Record<EntType, EntFields> = {
     player: { ...BASE },
     sprite: { ...BASE, worldHeight: 0.6 },
-    bot: { ...BASE },
+    bot: { ...BASE, w: 0.5, h: 0.5, speed: 2.75, color: "magenta", worldHeight: 1 },
     pickup: { ...BASE },
     stairs: { ...BASE },
 };
@@ -145,11 +152,24 @@ function entCommand(e: Ent): Record<string, unknown> {
         case "player":
             return { type: "player", x: e.x, y: e.y, angle: e.angle ?? undefined };
         case "bot":
-            return { type: "bot", x: e.x, y: e.y, behavior: e.behavior ?? undefined, speed: e.speed ?? undefined, texture: e.texture ?? undefined };
+            // speed, color and worldHeight are required by the loader, so fall back to the defaults.
+            return {
+                type: "bot", x: e.x, y: e.y, w: e.w, h: e.h,
+                speed: e.speed ?? DEFAULTS.bot.speed,
+                color: e.color ?? DEFAULTS.bot.color,
+                worldHeight: e.worldHeight ?? DEFAULTS.bot.worldHeight,
+                behavior: e.behavior ?? undefined,
+                texture: e.texture ?? undefined,
+            };
         case "pickup":
             return { type: "pickup", kind: e.kind, x: e.x, y: e.y };
         case "sprite":
-            return { type: "sprite", x: e.x, y: e.y, texture: e.texture ?? undefined, worldHeight: e.worldHeight ?? undefined };
+            return {
+                type: "sprite", x: e.x, y: e.y, w: e.w, h: e.h,
+                color: e.color ?? undefined,
+                texture: e.texture ?? undefined,
+                worldHeight: e.worldHeight ?? undefined,
+            };
         case "stairs":
             return { type: "stairs", x: e.x, y: e.y, to: e.to };
     }
@@ -157,6 +177,7 @@ function entCommand(e: Ent): Record<string, unknown> {
 
 function exportJSON(d: Doc): string {
     const rows: string[] = [];
+    // Flat array as the loader expects, written one map row per line so diffs stay readable.
     for (let y = 0; y < d.height; y++) rows.push("    " + d.tiles.slice(y * d.width, (y + 1) * d.width).join(","));
     const ordered = [...d.ents].sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type));
     const cmds = ordered.map((e) => "    " + JSON.stringify(entCommand(e)));
@@ -184,10 +205,15 @@ function parseDoc(text: string): { doc: Doc; notes: string[] } {
         || W < 1 || H < 1 || W > MAX_SIZE || H > MAX_SIZE) {
         throw new Error(`width/height must be integers from 1 to ${MAX_SIZE}`);
     }
-    if (!Array.isArray(d.tiles) || d.tiles.length !== W * H) {
-        throw new Error(`tiles must be an array of width*height (${W * H}) numbers`);
+    // Loader format is rows of numbers; a flat width*height array is also accepted.
+    let tiles: number[];
+    if (Array.isArray(d.tiles) && d.tiles.length === H && d.tiles.every((r) => Array.isArray(r) && r.length === W)) {
+        tiles = (d.tiles as number[][]).flat();
+    } else if (Array.isArray(d.tiles) && d.tiles.length === W * H && d.tiles.every((t) => typeof t === "number")) {
+        tiles = d.tiles as number[];
+    } else {
+        throw new Error(`tiles must be ${H} rows of ${W} numbers`);
     }
-    const tiles = d.tiles as number[];
     for (const t of tiles) if (tileProps(t) === undefined) throw new Error(`unknown tile id ${String(t)}`);
 
     const notes: string[] = [];
@@ -206,10 +232,24 @@ function parseDoc(text: string): { doc: Doc; notes: string[] } {
                 add("player", { angle: optNum(c.angle) });
                 break;
             case "sprite":
-                add("sprite", { texture: optStr(c.texture), worldHeight: optNum(c.worldHeight) });
+                add("sprite", {
+                    texture: optStr(c.texture),
+                    worldHeight: optNum(c.worldHeight),
+                    color: optStr(c.color),
+                    w: optNum(c.w) ?? DEFAULTS.sprite.w,
+                    h: optNum(c.h) ?? DEFAULTS.sprite.h,
+                });
                 break;
             case "bot":
-                add("bot", { behavior: optStr(c.behavior), speed: optNum(c.speed), texture: optStr(c.texture) });
+                add("bot", {
+                    behavior: optStr(c.behavior),
+                    texture: optStr(c.texture),
+                    speed: optNum(c.speed) ?? DEFAULTS.bot.speed,
+                    color: optStr(c.color) ?? DEFAULTS.bot.color,
+                    worldHeight: optNum(c.worldHeight) ?? DEFAULTS.bot.worldHeight,
+                    w: optNum(c.w) ?? DEFAULTS.bot.w,
+                    h: optNum(c.h) ?? DEFAULTS.bot.h,
+                });
                 break;
             case "pickup":
                 add("pickup", { kind: c.kind === "key" ? "key" : "page" });
@@ -554,11 +594,25 @@ function entityFields(target: EntFields, type: EntType, onChange: () => void): H
         box.append(row(label, i));
     };
     const texture = () => box.append(row("Texture", textureSelect(target.texture, (v) => { target.texture = v; onChange(); })));
+    const color = () => {
+        const i = document.createElement("input");
+        i.type = "text";
+        i.placeholder = "default";
+        i.value = target.color ?? "";
+        i.addEventListener("change", () => { target.color = i.value.trim() || null; onChange(); });
+        box.append(row("Color", i));
+    };
+    const hitbox = () => {
+        box.append(row("Hitbox W", numberInput(target.w, 0.05, 0.05, (v) => { target.w = v; onChange(); })));
+        box.append(row("Hitbox H", numberInput(target.h, 0.05, 0.05, (v) => { target.h = v; onChange(); })));
+    };
 
     switch (type) {
         case "sprite":
             texture();
+            color();
             optNumber("Visual height", "worldHeight", 0.05, 0.05);
+            hitbox();
             break;
         case "bot": {
             texture();
@@ -569,6 +623,9 @@ function entityFields(target: EntFields, type: EntType, onChange: () => void): H
             beh.addEventListener("change", () => { target.behavior = beh.value.trim() || null; onChange(); });
             box.append(row("Behavior", beh));
             optNumber("Speed", "speed", 0.25, 0);
+            color();
+            optNumber("Visual height", "worldHeight", 0.05, 0.05);
+            hitbox();
             break;
         }
         case "pickup": {
@@ -705,9 +762,10 @@ function rebuild() {
         .filter((e) => e.type === "sprite" || e.type === "bot" || e.type === "pickup")
         .map((e) => {
             const tex = e.texture && TEXTURE_IDS.includes(e.texture) ? (e.texture as TextureId) : undefined;
-            const height = e.type === "bot" ? 1 : e.type === "pickup" ? 0.4 : (e.worldHeight ?? 0.6);
-            const color = e.type === "pickup" ? (e.kind === "key" ? "gold" : "#f2f0d0") : "magenta";
-            return new Sprite(e.x + 0.5, e.y + 0.5, 0.3, 0.3, tex, color, height);
+            const pickup = e.type === "pickup";
+            const height = pickup ? 0.4 : (e.worldHeight ?? (e.type === "bot" ? 1 : 0.6));
+            const color = pickup ? (e.kind === "key" ? "gold" : "#f2f0d0") : (e.color ?? "magenta");
+            return new Sprite(e.x + 0.5, e.y + 0.5, pickup ? 0.3 : e.w, pickup ? 0.3 : e.h, tex, color, height);
         });
     levelDirty = false;
 }
