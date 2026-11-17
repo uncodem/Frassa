@@ -65,7 +65,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
     if (!pCmd) throw new Error("World contains no player spawner");
 
     const player = new Player(pCmd.x+0.5, pCmd.y+0.5, 0.3, 0.3);
-    if (pCmd.type === "player" && pCmd.angle) player.turn(pCmd.angle);
+    if (pCmd.type === "player" && pCmd.angle) player.setAngle(pCmd.angle);
 
     const bots: Bot[] = [];
     const sprites: Sprite[] = [];
