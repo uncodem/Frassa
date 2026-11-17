@@ -1,4 +1,4 @@
-import { TextureId } from "./asset.ts";
+import { TextureId } from "./asset";
 import { Sprite } from "./sprite";
 import { Player } from "./player";
 
