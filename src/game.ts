@@ -70,6 +70,7 @@ export class Game {
             this.mouseTurn = 0;
         }
 
+        this.collectPickups();
         for (const bot of this.bots) bot.update(dt, this.nav);
 
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);

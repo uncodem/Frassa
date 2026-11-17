@@ -92,7 +92,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
             case "pickup":
                 if (!isPickupType(cmd.kind))
                     throw new Error("Pickup spawn command contains invalid type");
-                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x, cmd.y, undefined, (cmd.kind === PickupType.Page) ? "red" : "gold"));
+                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+0.5, cmd.y+0.5, undefined, (cmd.kind === PickupType.Page) ? "red" : "gold"));
                 break;
         }
     }
