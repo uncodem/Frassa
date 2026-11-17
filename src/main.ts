@@ -65,7 +65,7 @@ canvas.addEventListener("click", () => canvas.requestPointerLock());
 
 document.addEventListener("mousemove", (e: MouseEvent) => {
     if (document.pointerLockElement !== canvas) return;
-    if (Math.abs(e.movementX) >= INPUT.MAX_SPIKE_LIMIT) return;
+    if (Math.abs(e.movementX) >= INPUT.MOUSE_SPIKE_LIMIT) return;
     game.mouseTurn += e.movementX * MOUSE_SENS;
 })
 
