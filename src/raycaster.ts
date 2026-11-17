@@ -39,9 +39,11 @@ export class Raycaster {
             const dist = rawDist * cosRel;               // perpendicular distance
             if (dist > RENDER.MAX_DIST) break;
 
-            if (!this.level.isSolid(mapX, mapY)) continue;
+            const tile = this.level.tileAt(mapX, mapY);
 
-            const props = TILE_DATA[this.level.tileAt(mapX, mapY)];
+            if (tile === TileType.Empty) continue;
+
+            const props = TILE_DATA[tile];
             const height = props.height;
             const top = (height - RENDER.EYE) / dist;
 
