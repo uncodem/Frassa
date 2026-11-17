@@ -37,9 +37,9 @@ const testJson = `
       ],
       "commands": [
         {"type":"player","x":2,"y":2},
-        {"type":"sprite","x":4,"y":10,"worldHeight":0.6},
-        {"type":"sprite","x":4,"y":4,"texture":"wall3","worldHeight":0.6},
-        {"type":"bot","x":6,"y":2,"speed":0,"texture":"platypus"}
+        {"type":"sprite","x":4,"y":10,"w":0.4,"h":0.4,"worldHeight":4,"texture":"platypus"},
+        {"type":"sprite","x":4,"y":4,"w":0.4,"h":0.4,"texture":"wall3","worldHeight":0.6},
+        {"type":"bot","x":6,"y":2,"w":0.4,"h":0.4,"speed":2.2,"texture":"platypus","worldHeight":1}
       ]
     }
 `;
