@@ -64,7 +64,6 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
     const bots: Bot[] = [];
     const sprites: Sprite[] = [];
 
-    // TODO: Add custom sizing and colors to bots/sprites
     for (const cmd of world.spawnList) {
         switch (cmd.type) {
             case "player": continue;
