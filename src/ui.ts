@@ -1,5 +1,6 @@
 import type { Game, Phase, FloorState } from "./game";
 import type { Player } from "./player";
+import * as audio from "./audio";
 
 const LOCKOUT_MS = 1500;
 const BEST_KEY = "nextbot-best-time";
@@ -40,6 +41,7 @@ export interface Rebuilt { floors: FloorState[]; player: Player }
 
 export function initUI(game: Game, canvas: HTMLCanvasElement, rebuild: () => Rebuilt) {
     // Phase -> which screen is visible. The only place screens are shown or hidden.
+    let prev: Phase = "boot";
     game.onPhaseChange = (p: Phase) => {
         for (const s of Object.values(screens)) s?.classList.add("hidden");
         screens[p]?.classList.remove("hidden");
@@ -58,6 +60,8 @@ export function initUI(game: Game, canvas: HTMLCanvasElement, rebuild: () => Reb
             if (isBest) saveBest(t);
             winTimeEl.textContent = isBest ? `Time: ${fmt(t)} (new best!)` : `Time: ${fmt(t)} | Best: ${fmt(best)}`;
         }
+        audio.onPhase(p, prev);
+        prev = p;
     };
     game.setPhase("boot");
 

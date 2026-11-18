@@ -6,10 +6,10 @@ import { Sprite, Pickup, PickupType, Teleporter } from "./sprite";
 import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
+import { playSfx, updateChase } from "./audio";
+import { SoundId } from "./asset";
 
 import { GAME, INPUT } from "./constants";
-
-const CATCH_RADIUS = 0.5;
 
 export interface FloorState {
     level: Level;
@@ -137,6 +137,8 @@ export class Game {
             this.pendingTeleport = null;
         }
 
+        if (this.phase === "playing") updateChase(this.bots, this.nav);
+
     }
 
     private draw() {
@@ -192,8 +194,8 @@ export class Game {
 
     private onPickup(p: Pickup) {
         switch (p.kind) {
-            case PickupType.Page: this.pages++; break;
-            case PickupType.Key: this.hasKey = true; break;
+            case PickupType.Page: this.pages++; playSfx(SoundId.Page); break;
+            case PickupType.Key: this.hasKey = true; playSfx(SoundId.Key); break;
         }
     }
 
