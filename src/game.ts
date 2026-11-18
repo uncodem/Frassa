@@ -83,6 +83,11 @@ export class Game {
         this.onPhaseChange(p);
     }
 
+    public startRun() { this.elapsed = 0; this.mouseTurn = 0; this.setPhase("playing"); }
+    public resume() { this.mouseTurn = 0; this.setPhase("playing"); }
+    public win() { this.setPhase("won"); }
+    public lose() { this.setPhase("lost"); }
+
     setLevel(floorNum: number) {
         if (floorNum < 0 || floorNum >= this.floors.length) throw new Error("Invalid floor destination");
         this.currentFloor = this.floors[floorNum]!;
