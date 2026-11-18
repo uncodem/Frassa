@@ -1,4 +1,4 @@
-
+import { Howl, type HowlOptions } from "howler";
 import { RENDER } from "./constants";
 
 export const asset = (p: string): string => `${import.meta.env.BASE_URL}assets/${p}`;
@@ -11,6 +11,24 @@ export const TextureId = {
     Platypus: "platypus"
 } as const;
 export type TextureId = (typeof TextureId)[keyof typeof TextureId];
+
+export const SoundId = {
+    Title: "title", Win: "win", Lose: "lose",
+    Page: "page", Key: "key", Chase: "chase", Catch: "catch",
+} as const;
+export type SoundId = (typeof SoundId)[keyof typeof SoundId];
+
+const SOUNDS: Record<SoundId, { files: string[] } & Partial<HowlOptions>> = {
+    [SoundId.Title]: { files: ["title.ogg", "title.mp3"], loop: true, volume: 0.6 },
+    [SoundId.Win]:   { files: ["win.ogg", "win.mp3"] },
+    [SoundId.Lose]:  { files: ["lose.ogg", "lose.mp3"] },
+    [SoundId.Page]:  { files: ["page.ogg", "page.mp3"] },
+    [SoundId.Key]:   { files: ["key.ogg", "key.mp3"] },
+    [SoundId.Chase]: { files: ["chase.ogg", "chase.mp3"], loop: true },
+    [SoundId.Catch]: { files: ["catch.ogg", "catch.mp3"] },
+};
+
+const sounds = new Map<SoundId, Howl>();
 
 const FILES: Record<TextureId, string> = {
     [TextureId.Wall]: "wall.png",
@@ -52,6 +70,21 @@ export async function loadAssets(): Promise<void> {
         loadedDark.set(id, makeDark(imgs[i]!));
     })
 }
+
+export async function loadSounds(): Promise<void> {
+    await Promise.all((Object.entries(SOUNDS) as [SoundId, (typeof SOUNDS)[SoundId]][]).map(
+        ([id, { files, ...opts }]) => new Promise<void>((resolve) => {
+            const howl = new Howl({
+                ...opts,
+                src: files.map(asset),
+                onload: () => { sounds.set(id, howl); resolve(); },
+                onloaderror: (_, err) => { console.warn(`Sound ${id} failed:`, err); resolve(); },
+            });
+        })
+    ));
+}
+
+export const getSound = (id: SoundId): Howl | undefined => sounds.get(id);
 
 export function getTexture(id: TextureId): HTMLImageElement {
     const img = loaded.get(id);

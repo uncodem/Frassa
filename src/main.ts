@@ -1,4 +1,4 @@
-import { loadAssets } from "./asset";
+import { loadAssets, loadSounds } from "./asset";
 import { parseMap, spawnFloor, spawnWorld } from "./loader";
 import { Game } from "./game";
 import { Player } from "./player";
@@ -15,7 +15,7 @@ const FLOOR_FILES: string[] = [floor0, floor1];
 
 const startBtn = document.querySelector<HTMLButtonElement>("#start-btn")!;
 try {
-    await loadAssets();
+    await Promise.all([loadAssets(), loadSounds()]);
 } catch (err) {
     startBtn.textContent = "Failed to load. Reload the page.";
     throw err;
