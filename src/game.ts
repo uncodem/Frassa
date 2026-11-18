@@ -64,7 +64,6 @@ export class Game {
 
     setLevel(floorNum: number) {
         if (floorNum < 0 || floorNum >= this.floors.length) throw new Error("Invalid floor destination");
-        // TODO: Add support for player spawn, other mapCommands
         this.currentFloor = this.floors[floorNum]!;
         ({
             bots: this.bots, 
@@ -143,11 +142,12 @@ export class Game {
     }
 
     private handleTeleport(p: Teleporter) {
-        // TODO: Allow different floor teleports
         this.player.x = p.tx;
         this.player.y = p.ty;
+        if (p.angle !== undefined) this.player.setAngle(p.angle);
+
         if (p.floor === -1) this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
-        if (p.angle) this.player.setAngle(p.angle);
+        else this.setLevel(p.floor);
     }
 
     private onPickup(p: Pickup) {
