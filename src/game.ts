@@ -11,50 +11,78 @@ import { GAME, INPUT } from "./constants";
 
 const CATCH_RADIUS = 0.5;
 
+export interface FloorState {
+    level: Level;
+    bots: Bot[];
+    sprites: Sprite[];
+    pickups: Pickup[];
+    nav?: NavGrid;
+    raycaster?: Raycaster;
+}
+
 export class Game {
     private nav: NavGrid;
     private raycaster: Raycaster;
     private renderer: Renderer;
     private last: DOMHighResTimeStamp = 0;
     private pendingTeleport: Teleporter|null = null;
+    private currentFloor: FloorState;
 
     private pages: number = 0;
     private hasKey: boolean = false;
     // TODO: Add catch consequences
     private caught: boolean = false;
 
+    public bots: Bot[];
+    public sprites: Sprite[];
+    public pickups: Pickup[];
+
     public mouseTurn: number = 0;
 
     constructor(
-        public currentLevel: Level,
+        private floors: FloorState[],
         public player: Player,
-        public bots: Bot[],
-        public sprites: Sprite[],
-        public pickups: Pickup[],
         public readonly canvas: HTMLCanvasElement,
         private keyset: Set<string>,
     ) {
         this.renderer = new Renderer(canvas);
-        this.nav = new NavGrid(currentLevel);
-        this.raycaster = new Raycaster(currentLevel, this.canvas.width);
+
+        for (const floor of this.floors) {
+            floor.nav = new NavGrid(floor.level);
+            floor.raycaster = new Raycaster(floor.level, this.canvas.width);
+        }
+
+        this.currentFloor = this.floors[0]!;
+        this.nav = this.currentFloor.nav!;
+        this.raycaster = this.currentFloor.raycaster!;
         this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
+
+        this.bots = this.currentFloor.bots;
+        this.sprites = this.currentFloor.sprites;
+        this.pickups = this.currentFloor.pickups;
     }
 
-    setLevel(level: Level) {
+    setLevel(floorNum: number) {
+        if (floorNum < 0 || floorNum >= this.floors.length) throw new Error("Invalid floor destination");
         // TODO: Add support for player spawn, other mapCommands
-        this.currentLevel = level;
-        this.nav = new NavGrid(level);
-        this.raycaster = new Raycaster(this.currentLevel, this.canvas.width);
-
+        this.currentFloor = this.floors[floorNum]!;
+        ({
+            bots: this.bots, 
+            sprites: this.sprites,
+            pickups: this.pickups,
+        } = this.currentFloor);
+        this.nav = this.currentFloor.nav!;
+        this.raycaster = this.currentFloor.raycaster!;
         this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
     }
 
     handleInput(dt: number) {
-        if (this.keyset.has("w")) this.player.move(this.currentLevel, dt);
-        else if (this.keyset.has("s")) this.player.move(this.currentLevel, -dt);
+        const level = this.currentFloor.level
+        if (this.keyset.has("w")) this.player.move(level, dt);
+        else if (this.keyset.has("s")) this.player.move(level, -dt);
 
-        if (this.keyset.has("a")) this.player.strafe(this.currentLevel, -dt);
-        else if (this.keyset.has("d")) this.player.strafe(this.currentLevel, dt);
+        if (this.keyset.has("a")) this.player.strafe(level, -dt);
+        else if (this.keyset.has("d")) this.player.strafe(level, dt);
 
         if (this.keyset.has("arrowleft")) this.player.turn(-dt);
         else if (this.keyset.has("arrowright")) this.player.turn(dt);
@@ -83,7 +111,7 @@ export class Game {
         }
 
         const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
-        this.renderer.drawFrame(this.player, this.currentLevel, [...this.bots, ...this.sprites, ...this.pickups], hits);
+        this.renderer.drawFrame(this.player, this.currentFloor.level, [...this.bots, ...this.sprites, ...this.pickups], hits);
 
         this.renderer.ctx.font = "24px monospace";
         this.renderer.ctx.fillStyle = "white";

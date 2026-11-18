@@ -57,7 +57,9 @@ const world = parseMap(testJson);
 const {player, bots, sprites, pickups} = spawnWorld(world);
 const keys = new Set<string>();
 
-const game = new Game(world.level, player, bots, sprites, pickups, canvas, keys);
+const game = new Game([
+    { level: world.level, bots, sprites, pickups }
+], player, canvas, keys);
 window.requestAnimationFrame(game.update);
 
 window.addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
