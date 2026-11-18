@@ -137,7 +137,7 @@ export class Game {
             this.pendingTeleport = null;
         }
 
-        if (this.phase === "playing") updateChase(this.bots, this.nav);
+        if (this.phase === "playing") updateChase(this.bots, this.nav, this.player, dt);
 
     }
 
