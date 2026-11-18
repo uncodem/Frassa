@@ -3,8 +3,6 @@ import { parseMap, spawnFloor, spawnWorld } from "./loader";
 import { Game } from "./game";
 import { RENDER, INPUT } from "./constants";
 
-// `?raw` makes Vite import the file's text, which is what parseMap takes.
-// Floor index = position in FLOOR_FILES, and that index is what teleporters' "floor" refers to.
 import floor0 from "./maps/floor0.json?raw";
 import floor1 from "./maps/floor1.json?raw";
 
@@ -22,7 +20,6 @@ canvas.height = RENDER.HEIGHT;
 
 const MOUSE_SENS = INPUT.MOUSE_SENSE;
 
-// Catch bad teleporters at startup instead of freezing the game loop mid-teleport.
 function validateTeleporters(worlds: World[]) {
     worlds.forEach((w, i) => {
         for (const cmd of w.spawnList) {
@@ -44,7 +41,6 @@ function validateTeleporters(worlds: World[]) {
 const worlds: World[] = FLOOR_FILES.map((json) => parseMap(json));
 validateTeleporters(worlds);
 
-// The lobby (floor 0) creates the one real Player; the other floors only produce entities.
 const { player, ...lobby } = spawnWorld(worlds[0]!);
 
 const floors: FloorState[] = [
