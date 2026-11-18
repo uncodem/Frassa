@@ -1,7 +1,7 @@
 
 import { Level, TileType } from "./level";
 import { Bot } from "./bot";
-import { Sprite, Pickup, PickupType } from "./sprite";
+import { Sprite, Pickup, PickupType, Teleporter } from "./sprite";
 import { Player } from "./player";
 import { TextureId } from "./asset";
 
@@ -21,8 +21,8 @@ export type MapCommand =
     | { type: "player"; x: number; y: number; angle?: number }
     | { type: "bot"; x: number; y: number; w: number; h: number; speed: number; color: string, worldHeight: number, behavior?: string; texture?: string }
     | { type: "pickup"; kind: string; x: number; y: number }
+    | { type: "teleporter"; x: number; y: number; tx: number; ty: number; floor: number; angle?: number; texture?: string }
     | { type: "sprite"; x: number; y: number; w: number; h: number; color?: string; texture?: string; worldHeight?: number }
-    | { type: "stairs"; x: number; y: number; to: number };
 
 interface ParsedWorld {
     width: number;
@@ -92,9 +92,12 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
                 sprites.push(new Sprite(cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, cmd.w, cmd.h, cmd.texture as TextureId, cmd.color, cmd.worldHeight));
                 break;
             case "pickup":
-                if (!isPickupType(cmd.kind))
+                if (!isPickupType(cmd.kind) || cmd.kind === "teleporter")
                     throw new Error("Pickup spawn command contains invalid type");
-                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+0.5, cmd.y+0.5, (cmd.kind === PickupType.Page) ? PICKUP.PAGE_COLOR : PICKUP.KEY_COLOR));
+                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, (cmd.kind === PickupType.Page) ? PICKUP.PAGE_COLOR : PICKUP.KEY_COLOR));
+                break;
+            case "teleporter":
+                pickups.push(new Teleporter(cmd.x + TILE_CENTER, cmd.y + TILE_CENTER, cmd.tx, cmd.ty, cmd.floor, cmd.angle, cmd.texture));
                 break;
         }
     }
