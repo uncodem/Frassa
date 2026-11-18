@@ -21,7 +21,8 @@ export interface ProjectedSprite {
 
 export const PickupType = {
     Key: "key",
-    Page: "page"
+    Page: "page",
+    Teleporter: "teleporter"
 } as const;
 
 export type PickupType = (typeof PickupType)[keyof typeof PickupType];
@@ -29,6 +30,20 @@ export type PickupType = (typeof PickupType)[keyof typeof PickupType];
 export class Pickup extends Sprite {
     constructor (public readonly kind: PickupType, x: number, y: number, color: string, texture?: TextureId) {
         super (x, y, PICKUP.SIZE, PICKUP.SIZE, texture, color, PICKUP.HEIGHT);
+    }
+}
+
+export class Teleporter extends Pickup {
+    constructor (
+        x: number,
+        y: number,
+        public readonly tx: number,
+        public readonly ty: number,
+        public readonly floor: number,
+        public readonly angle?: number,
+        texture?: TextureId
+    ) {
+        super (PickupType.Teleporter, x, y, "rgba(0,0,0,0)", texture);
     }
 }
 
