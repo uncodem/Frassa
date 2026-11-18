@@ -83,7 +83,7 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
             case "bot": 
                 if (cmd.texture && !isTextureId(cmd.texture))
                     throw new Error("Bot spawn command contains invalid texture");
-                bots.push(new Bot(player, cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, cmd.w, cmd.h, cmd.color, cmd.speed, cmd.texture as TextureId, cmd.worldHeight));
+                bots.push(new Bot(cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, cmd.w, cmd.h, cmd.color, cmd.speed, cmd.texture as TextureId, cmd.worldHeight));
                 break;
             case "sprite":
                 if (cmd.texture && !isTextureId(cmd.texture))

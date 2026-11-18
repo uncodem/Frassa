@@ -78,7 +78,7 @@ export class Game {
         this.collectPickups();
         this.caught = false;
         for (const bot of this.bots) {
-            bot.update(dt, this.nav);
+            bot.update(dt, this.nav, this.player);
             this.checkCaught(bot);
         }
 

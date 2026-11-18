@@ -7,7 +7,6 @@ import { TILE_CENTER, ENTITY } from "./constants";
 
 export class Bot extends Sprite {
     constructor(
-        private readonly player: Player,
         x: number, y: number, w: number, h: number,
         color: string,
         public speed: number,
@@ -17,14 +16,14 @@ export class Bot extends Sprite {
         super(x,y,w,h,texture,color,worldHeight);
     }
 
-    update(dt: number, nav: NavGrid) {
+    update(dt: number, nav: NavGrid, player: Player) {
         const W = nav.width;
         const tx = Math.floor(this.x), ty = Math.floor(this.y);
         const here = nav.dist[ty * W + tx]!;
 
         let targetX: number, targetY: number;
         if (here === 0) {
-            targetX = this.player.x; targetY = this.player.y;
+            targetX = player.x; targetY = player.y;
         } else if (here === -1) {
             return;
         } else {
