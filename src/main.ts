@@ -1,6 +1,8 @@
 import { loadAssets } from "./asset";
 import { parseMap, spawnFloor, spawnWorld } from "./loader";
 import { Game } from "./game";
+import { Player } from "./player";
+import { initUI } from "./ui";
 import { RENDER, INPUT } from "./constants";
 
 import floor0 from "./maps/floor0.json?raw";
@@ -11,7 +13,13 @@ import type { World } from "./loader";
 
 const FLOOR_FILES: string[] = [floor0, floor1];
 
-await loadAssets();
+const startBtn = document.querySelector<HTMLButtonElement>("#start-btn")!;
+try {
+    await loadAssets();
+} catch (err) {
+    startBtn.textContent = "Failed to load. Reload the page.";
+    throw err;
+}
 
 const canvas = document.getElementById("display") as HTMLCanvasElement;
 
@@ -38,24 +46,30 @@ function validateTeleporters(worlds: World[]) {
     });
 }
 
-const worlds: World[] = FLOOR_FILES.map((json) => parseMap(json));
-validateTeleporters(worlds);
+validateTeleporters(FLOOR_FILES.map((json) => parseMap(json)));
 
-const { player, ...lobby } = spawnWorld(worlds[0]!);
-
-const floors: FloorState[] = [
-    { level: worlds[0]!.level, ...lobby },
-    ...worlds.slice(1).map((w) => ({ level: w.level, ...spawnFloor(w) })),
-];
+function build(): { floors: FloorState[], player: Player } {
+    const worlds: World[] = FLOOR_FILES.map((json) => parseMap(json));
+    const { player, ...lobby } = spawnWorld(worlds[0]!);
+    const floors: FloorState[] = [
+        { level: worlds[0]!.level, ...lobby },
+        ...worlds.slice(1).map((w) => ({ level: w.level, ...spawnFloor(w) })),
+    ];
+    return { floors, player };
+}
 
 const keys = new Set<string>();
-const game = new Game(floors, player, canvas, keys);
+const first = build();
+
+const game = new Game(first.floors, first.player, canvas, keys);
+
+initUI(game, canvas, build);
 window.requestAnimationFrame(game.update);
 
 window.addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
 window.addEventListener("keyup", (e: KeyboardEvent) => keys.delete(e.key.toLowerCase()));
 
-canvas.addEventListener("click", () => canvas.requestPointerLock());
+window.addEventListener("blur", () => keys.clear());
 
 document.addEventListener("mousemove", (e: MouseEvent) => {
     if (document.pointerLockElement !== canvas) return;
