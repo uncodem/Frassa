@@ -39,7 +39,9 @@ export class Player extends Entity {
     }
 
     setAngle(na: number) {
-        this.cam.turn(na - this.cam.a);
+        this.cam.a = na;
+        this.dx = Math.cos(na);
+        this.dy = Math.sin(na);
     }
 
     move(level: Level, amnt: number) {
