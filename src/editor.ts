@@ -5,6 +5,7 @@ import { Renderer } from "./renderer";
 import { Player } from "./player";
 import { Sprite } from "./sprite";
 import { loadAssets, getTexture, tryGetTexture, TextureId } from "./asset";
+import { GAME, PICKUP } from "./constants";
 
 // tryGetTexture() only reports whether a texture is loaded; this returns the image itself.
 function texImg(id: string | null | undefined): HTMLImageElement | undefined {
@@ -16,28 +17,33 @@ function texImg(id: string | null | undefined): HTMLImageElement | undefined {
 //   { width, height, tiles: number[] (flat, row-major), commands: MapCommand[] }
 //   { type: "player"; x; y; angle? }
 //   { type: "bot"; x; y; w; h; speed; color; worldHeight; behavior?; texture? }
-//   { type: "pickup"; kind: "page" | "key"; x; y }
+//   { type: "pickup"; kind: "page" | "key"; x; y; texture? }
+//   { type: "teleporter"; x; y; tx; ty; floor; angle?; texture? }
 //   { type: "sprite"; x; y; w; h; color?; texture?; worldHeight? }
-//   { type: "stairs"; x; y; to }
-// Coordinates are whole tile units; the game's spawner adds 0.5.
+// Entity x/y are whole tile units; the game's spawner adds 0.5.
+// Teleporter tx/ty are NOT offset by the spawner: they are raw world coordinates,
+// so 3.5 is the middle of tile 3. The editor defaults them to tile centers.
+// floor -1 means "this floor".
 // Optional fields are omitted from the file when unset; required ones are always written.
 // Import also accepts tiles as rows (number[][]), for when the loader moves to 2D.
 // ---------------------------------------------------------------------------
 
-type EntType = "player" | "sprite" | "bot" | "pickup" | "stairs";
-type Tool = "paint" | "rect" | "fill" | "pick" | "select" | "player" | "sprite" | "bot" | "pickup" | "stairs" | "cam";
+type EntType = "player" | "sprite" | "bot" | "pickup" | "teleporter";
+type Tool = "paint" | "rect" | "fill" | "pick" | "select" | "player" | "sprite" | "bot" | "pickup" | "teleporter" | "cam";
 type PickupKind = "page" | "key";
 
 // Every field exists on every entity so editing stays simple; only the fields that
 // belong to the entity's type are exported (and null means "omit, use loader default").
 interface EntFields {
-    texture: string | null;      // sprite, bot
+    texture: string | null;      // sprite, bot, pickup, teleporter
     worldHeight: number | null;  // sprite
-    angle: number | null;        // player, radians
+    angle: number | null;        // player, teleporter (landing facing), radians
     behavior: string | null;     // bot
     speed: number | null;        // bot
     kind: PickupKind;            // pickup
-    to: number;                  // stairs: destination floor index
+    tx: number;                  // teleporter: destination x, raw world units
+    ty: number;                  // teleporter: destination y, raw world units
+    floor: number;               // teleporter: destination floor, -1 = this floor
     color: string | null;        // sprite (optional), bot (required in file)
     w: number;                   // sprite, bot hitbox width (tiles)
     h: number;                   // sprite, bot hitbox height (tiles)
@@ -56,21 +62,21 @@ interface Doc {
 interface Cell { x: number; y: number }
 
 const MAX_SIZE = 100;
-const STORAGE_KEY = "nextbot-editor-doc-v3";
+const STORAGE_KEY = "nextbot-editor-doc-v4";
 const PW = 480, PH = 270;
 
-const ORDER: EntType[] = ["player", "pickup", "stairs", "sprite", "bot"];
+const ORDER: EntType[] = ["player", "pickup", "teleporter", "sprite", "bot"];
 
 const BASE: EntFields = {
     texture: null, worldHeight: null, angle: null, behavior: null, speed: null,
-    kind: "page", to: 0, color: null, w: 0.3, h: 0.3,
+    kind: "page", tx: 0, ty: 0, floor: -1, color: null, w: 0.3, h: 0.3,
 };
 const DEFAULTS: Record<EntType, EntFields> = {
     player: { ...BASE },
     sprite: { ...BASE, worldHeight: 0.6 },
     bot: { ...BASE, w: 0.5, h: 0.5, speed: 2.75, color: "magenta", worldHeight: 1 },
     pickup: { ...BASE },
-    stairs: { ...BASE },
+    teleporter: { ...BASE },
 };
 // Values used for newly placed entities (editable in the panel when nothing is selected).
 const placeDefaults: Record<EntType, EntFields> = {
@@ -78,7 +84,7 @@ const placeDefaults: Record<EntType, EntFields> = {
     sprite: { ...DEFAULTS.sprite },
     bot: { ...DEFAULTS.bot },
     pickup: { ...DEFAULTS.pickup },
-    stairs: { ...DEFAULTS.stairs },
+    teleporter: { ...DEFAULTS.teleporter },
 };
 
 const ENT_STYLE: Record<EntType, { color: string; letter: string }> = {
@@ -86,7 +92,7 @@ const ENT_STYLE: Record<EntType, { color: string; letter: string }> = {
     sprite: { color: "#ffb02e", letter: "S" },
     bot: { color: "#ff4d4d", letter: "B" },
     pickup: { color: "#f2e04a", letter: "G" },
-    stairs: { color: "#b77bff", letter: "T" },
+    teleporter: { color: "#b77bff", letter: "T" },
 };
 function entLetter(e: Ent): string {
     return e.type === "pickup" ? (e.kind === "key" ? "K" : "G") : ENT_STYLE[e.type].letter;
@@ -162,7 +168,7 @@ function entCommand(e: Ent): Record<string, unknown> {
                 texture: e.texture ?? undefined,
             };
         case "pickup":
-            return { type: "pickup", kind: e.kind, x: e.x, y: e.y };
+            return { type: "pickup", kind: e.kind, x: e.x, y: e.y, texture: e.texture ?? undefined };
         case "sprite":
             return {
                 type: "sprite", x: e.x, y: e.y, w: e.w, h: e.h,
@@ -170,8 +176,12 @@ function entCommand(e: Ent): Record<string, unknown> {
                 texture: e.texture ?? undefined,
                 worldHeight: e.worldHeight ?? undefined,
             };
-        case "stairs":
-            return { type: "stairs", x: e.x, y: e.y, to: e.to };
+        case "teleporter":
+            return {
+                type: "teleporter", x: e.x, y: e.y, tx: e.tx, ty: e.ty, floor: e.floor,
+                angle: e.angle ?? undefined,
+                texture: e.texture ?? undefined,
+            };
     }
 }
 
@@ -252,10 +262,17 @@ function parseDoc(text: string): { doc: Doc; notes: string[] } {
                 });
                 break;
             case "pickup":
-                add("pickup", { kind: c.kind === "key" ? "key" : "page" });
+                add("pickup", { kind: c.kind === "key" ? "key" : "page", texture: optStr(c.texture) });
                 break;
-            case "stairs":
-                add("stairs", { to: Math.floor(optNum(c.to) ?? 0) });
+            case "teleporter":
+                // tx/ty are raw world coordinates (no floor()), so 3.5 survives a round trip.
+                add("teleporter", {
+                    tx: optNum(c.tx) ?? x + 0.5,
+                    ty: optNum(c.ty) ?? y + 0.5,
+                    floor: Math.round(optNum(c.floor) ?? -1),
+                    angle: optNum(c.angle),
+                    texture: optStr(c.texture),
+                });
                 break;
             default:
                 skipped++;
@@ -308,6 +325,7 @@ let doc: Doc = loadStored() ?? blankDoc(24, 24, true);
 let tool: Tool = "paint";
 let tile: number = TileType.Wall;
 let selected: Ent | null = null;
+let pickingTarget: Ent | null = null;   // teleporter waiting for a destination click
 let hover: Cell | null = null;
 
 let zoom = 20, panX = 20, panY = 20;
@@ -467,6 +485,7 @@ function placeEnt(type: EntType, x: number, y: number) {
     }
     const f = placeDefaults[type];
     const e = mk(type, x, y, f);
+    if (type === "teleporter") { e.tx = x + 0.5; e.ty = y + 0.5; }   // sensible start; move it with "Pick target"
     doc.ents.push(e);
     selected = e;
     markDirty();
@@ -493,7 +512,7 @@ function resizeDoc(w: number, h: number) {
 // ---------------------------------------------------------------------------
 
 const TOOL_KEYS: Record<string, Tool> = {
-    b: "paint", r: "rect", f: "fill", i: "pick", v: "select", p: "player", s: "sprite", o: "bot", k: "pickup", t: "stairs", c: "cam",
+    b: "paint", r: "rect", f: "fill", i: "pick", v: "select", p: "player", s: "sprite", o: "bot", k: "pickup", t: "teleporter", c: "cam",
 };
 
 function setTool(t: Tool) {
@@ -635,11 +654,42 @@ function entityFields(target: EntFields, type: EntType, onChange: () => void): H
             s.value = target.kind;
             s.addEventListener("change", () => { target.kind = s.value === "key" ? "key" : "page"; onChange(); });
             box.append(row("Kind", s));
+            texture();
             break;
         }
-        case "stairs":
-            box.append(row("To floor", numberInput(target.to, 1, 0, (v) => { target.to = Math.max(0, Math.round(v)); onChange(); })));
+        case "teleporter": {
+            // Target fields only make sense for a placed teleporter, not the "new teleporter" defaults.
+            const isSel = selected !== null && (selected as EntFields) === target;
+            if (isSel) {
+                box.append(row("Target X", numberInput(target.tx, 0.5, 0, (v) => { target.tx = v; onChange(); })));
+                box.append(row("Target Y", numberInput(target.ty, 0.5, 0, (v) => { target.ty = v; onChange(); })));
+                const pickBtn = document.createElement("button");
+                pickBtn.textContent = "Pick target on map";
+                pickBtn.addEventListener("click", () => {
+                    pickingTarget = selected;
+                    flash("Click a tile on the map to set the target (Esc cancels)");
+                    mapCanvas.style.cursor = "crosshair";
+                    mapDirty = true;
+                });
+                box.append(pickBtn);
+            }
+            box.append(row("To floor", numberInput(target.floor, 1, -1, (v) => { target.floor = Math.max(-1, Math.round(v)); onChange(); })));
+            const hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent = "Floor -1 = this floor. Target is a raw position: 3.5 is the middle of tile 3.";
+            box.append(hint);
+            optNumber("Landing angle (rad)", "angle", 0.1);
+            const ab = document.createElement("button");
+            ab.textContent = "Use preview angle";
+            ab.addEventListener("click", () => { target.angle = Math.round(pv.camera.a * 100) / 100; onChange(); });
+            box.append(ab);
+            texture();
+            const h2 = document.createElement("p");
+            h2.className = "hint";
+            h2.textContent = "No texture = invisible.";
+            box.append(h2);
             break;
+        }
         case "player": {
             optNumber("Angle (rad)", "angle", 0.1);
             const b = document.createElement("button");
@@ -671,7 +721,7 @@ function renderProps() {
         h.className = "hint";
         h.textContent = "Nothing selected. These are the defaults for newly placed entities (Select tool picks existing ones).";
         propsEl.append(h);
-        for (const t of ["sprite", "bot", "pickup", "stairs"] as const) {
+        for (const t of ["sprite", "bot", "pickup", "teleporter"] as const) {
             const hd = document.createElement("div");
             hd.style.marginTop = "8px";
             hd.innerHTML = `<b>New ${t}</b>`;
@@ -703,6 +753,26 @@ function runChecks() {
             items.push({ kind: "warn", text: `${e.type} at (${e.x}, ${e.y}) is inside a solid tile` });
         if (e.texture && !TEXTURE_IDS.includes(e.texture))
             items.push({ kind: "warn", text: `${e.type} at (${e.x}, ${e.y}) uses unknown texture "${e.texture}"` });
+    }
+
+    const tps = doc.ents.filter((e) => e.type === "teleporter");
+    for (const t of tps) {
+        const at = `teleporter at (${t.x}, ${t.y})`;
+        if (t.floor < -1) items.push({ kind: "warn", text: `${at} has floor ${t.floor}; use -1 for this floor or a floor index` });
+        if (Number.isInteger(t.tx) && Number.isInteger(t.ty))
+            items.push({ kind: "warn", text: `${at} targets (${t.tx}, ${t.ty}), a tile corner. Use x.5 for a tile center` });
+        if (t.floor !== -1) continue;   // the rest can only be checked against this floor
+        const tx = Math.floor(t.tx), ty = Math.floor(t.ty);
+        if (!inb(tx, ty)) { items.push({ kind: "warn", text: `${at} targets outside the map` }); continue; }
+        // the player's box (0.3 wide) must not overlap a solid tile at the landing point
+        const r = 0.15;
+        const hitsSolid = [[-r, -r], [r, -r], [-r, r], [r, r]].some(([dx, dy]) => {
+            const px = Math.floor(t.tx + dx!), py = Math.floor(t.ty + dy!);
+            return !inb(px, py) || isSolidId(doc.tiles[py * doc.width + px]!);
+        });
+        if (hitsSolid) items.push({ kind: "warn", text: `${at} lands inside a solid tile` });
+        const near = tps.some((o) => Math.hypot(o.x + 0.5 - t.tx, o.y + 0.5 - t.ty) <= GAME.PICKUP_RADIUS);
+        if (near) items.push({ kind: "warn", text: `${at} lands within pickup range of a teleporter and will re-trigger` });
     }
 
     const p = players[0];
@@ -759,13 +829,14 @@ function rebuild() {
     level = new Level(rows);
     raycaster = new Raycaster(level, PW);
     previewSprites = doc.ents
-        .filter((e) => e.type === "sprite" || e.type === "bot" || e.type === "pickup")
+        // teleporters without a texture are invisible in the game, so they're left out here too
+        .filter((e) => e.type === "sprite" || e.type === "bot" || e.type === "pickup" || (e.type === "teleporter" && e.texture))
         .map((e) => {
             const tex = e.texture && TEXTURE_IDS.includes(e.texture) ? (e.texture as TextureId) : undefined;
-            const pickup = e.type === "pickup";
-            const height = pickup ? 0.4 : (e.worldHeight ?? (e.type === "bot" ? 1 : 0.6));
-            const color = pickup ? (e.kind === "key" ? "gold" : "#f2f0d0") : (e.color ?? "magenta");
-            return new Sprite(e.x + 0.5, e.y + 0.5, pickup ? 0.3 : e.w, pickup ? 0.3 : e.h, tex, color, height);
+            const pickup = e.type === "pickup" || e.type === "teleporter";
+            const height = pickup ? PICKUP.HEIGHT : (e.worldHeight ?? (e.type === "bot" ? 1 : 0.6));
+            const color = pickup ? (e.type === "pickup" && e.kind === "key" ? PICKUP.KEY_COLOR : PICKUP.PAGE_COLOR) : (e.color ?? "magenta");
+            return new Sprite(e.x + 0.5, e.y + 0.5, pickup ? PICKUP.SIZE : e.w, pickup ? PICKUP.SIZE : e.h, tex, color, height);
         });
     levelDirty = false;
 }
@@ -894,6 +965,35 @@ function drawMap() {
     c.lineWidth = 1;
     c.strokeRect(panX + 0.5, panY + 0.5, W * zoom, H * zoom);
 
+    // teleporter links (same-floor targets only; other floors get a label below)
+    for (const e of doc.ents) {
+        if (e.type !== "teleporter" || e.floor !== -1) continue;
+        const sel = e === selected || e === pickingTarget;
+        const ax = panX + (e.x + 0.5) * zoom, ay = panY + (e.y + 0.5) * zoom;
+        const bx = panX + e.tx * zoom, by = panY + e.ty * zoom;
+        c.strokeStyle = sel ? "#e0b8ff" : "rgba(183,123,255,0.55)";
+        c.lineWidth = sel ? 2 : 1;
+        c.setLineDash([5, 4]);
+        c.beginPath();
+        c.moveTo(ax, ay);
+        c.lineTo(bx, by);
+        c.stroke();
+        c.setLineDash([]);
+        const m = Math.max(4, zoom * 0.2);
+        c.fillStyle = sel ? "#e0b8ff" : "rgba(183,123,255,0.8)";
+        c.beginPath();
+        c.moveTo(bx, by - m); c.lineTo(bx + m, by); c.lineTo(bx, by + m); c.lineTo(bx - m, by);
+        c.closePath();
+        c.fill();
+        if (e.angle !== null) {   // landing direction
+            c.strokeStyle = c.fillStyle;
+            c.beginPath();
+            c.moveTo(bx, by);
+            c.lineTo(bx + Math.cos(e.angle) * zoom * 0.7, by + Math.sin(e.angle) * zoom * 0.7);
+            c.stroke();
+        }
+    }
+
     // entities
     for (const e of doc.ents) {
         if (!inb(e.x, e.y)) continue;
@@ -911,6 +1011,10 @@ function drawMap() {
             c.arc(cx, cy, r, 0, Math.PI * 2);
             c.fill();
             if (zoom >= 14) { c.fillStyle = "#000"; c.fillText(entLetter(e), cx, cy + 1); }
+        }
+        if (e.type === "teleporter" && e.floor !== -1 && zoom >= 14) {
+            c.fillStyle = "#e0b8ff";
+            c.fillText(`→F${e.floor}`, cx, cy + r + zoom * 0.3);
         }
         if (e === selected) {
             c.strokeStyle = "#fff";
@@ -1004,6 +1108,20 @@ mapCanvas.addEventListener("pointerdown", (e) => {
     }
     if (e.button !== 0) return;
 
+    if (pickingTarget) {
+        const t = pickingTarget;
+        pickingTarget = null;
+        mapCanvas.style.cursor = tool === "select" ? "default" : "crosshair";
+        if (inb(c.x, c.y) && doc.ents.includes(t)) {
+            t.tx = c.x + 0.5;   // tile center; fine-tune in the fields if you want an offset
+            t.ty = c.y + 0.5;
+            commit();
+            renderProps();
+        }
+        mapDirty = true;
+        return;
+    }
+
     switch (tool) {
         case "paint":
             if (inb(c.x, c.y)) paintAt(c.x, c.y);
@@ -1031,7 +1149,7 @@ mapCanvas.addEventListener("pointerdown", (e) => {
         case "sprite":
         case "bot":
         case "pickup":
-        case "stairs":
+        case "teleporter":
             placeEnt(tool, c.x, c.y);
             commit();
             onDocChanged();
@@ -1114,6 +1232,13 @@ mapCanvas.addEventListener("wheel", (e) => {
 // ---------------------------------------------------------------------------
 
 window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && pickingTarget) {
+        pickingTarget = null;
+        mapCanvas.style.cursor = tool === "select" ? "default" : "crosshair";
+        mapDirty = true;
+        flash("Target pick cancelled");
+        return;
+    }
     const t = e.target as HTMLElement;
     if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t === previewCanvas) {
         if (!((e.ctrlKey || e.metaKey) && t.tagName !== "INPUT")) return;
