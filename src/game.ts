@@ -147,6 +147,12 @@ export class Game {
             this.renderer.ctx.font = "24px monospace";
             this.renderer.ctx.fillStyle = "white";
             this.renderer.ctx.fillText(`Pages: ${this.pages}${this.hasKey ? " | key" : ""}`, 8, 32);
+        } else if (this.phase === "paused") {
+            this.renderer.ctx.fillStyle = "rgba(0,0,0,0.7)";
+            this.renderer.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+            this.renderer.ctx.font = "24px monospace";
+            this.renderer.ctx.fillStyle = "white";
+            this.renderer.ctx.fillText("Paused", 8, 32);
         }
     }
 
