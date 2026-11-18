@@ -1,0 +1,20 @@
+{
+  "width": 11,
+  "height": 7,
+  "tiles": [
+    2,2,2,2,2,2,2,2,2,2,2,
+    2,0,0,0,0,0,0,0,0,0,2,
+    2,0,0,0,2,0,2,0,0,0,2,
+    2,0,0,0,0,0,0,0,0,0,2,
+    2,0,0,0,2,0,2,0,0,0,2,
+    2,0,0,0,0,0,0,0,0,0,2,
+    2,2,2,2,2,2,2,2,2,2,2
+  ],
+  "commands": [
+    {"type":"pickup","kind":"page","x":2,"y":5},
+    {"type":"pickup","kind":"key","x":5,"y":3},
+    {"type":"teleporter","x":9,"y":5,"tx":6.5,"ty":6.5,"floor":0,"angle":3.93,"texture":"wall3"},
+    {"type":"sprite","x":5,"y":1,"w":0.4,"h":0.4,"texture":"wall3","worldHeight":0.6},
+    {"type":"bot","x":8,"y":1,"w":0.4,"h":0.4,"speed":2.2,"color":"magenta","worldHeight":1,"texture":"platypus"}
+  ]
+}

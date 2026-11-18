@@ -1,10 +1,17 @@
-import { loadAssets, TextureId } from "./asset";
-import { Level, TileType, TILE_DATA } from "./level";
-import { parseMap, spawnWorld } from "./loader";
+import { loadAssets } from "./asset";
+import { parseMap, spawnFloor, spawnWorld } from "./loader";
 import { Game } from "./game";
 import { RENDER, INPUT } from "./constants";
 
+// `?raw` makes Vite import the file's text, which is what parseMap takes.
+// Floor index = position in FLOOR_FILES, and that index is what teleporters' "floor" refers to.
+import floor0 from "./maps/floor0.json?raw";
+import floor1 from "./maps/floor1.json?raw";
+
+import type { FloorState } from "./game";
 import type { World } from "./loader";
+
+const FLOOR_FILES: string[] = [floor0, floor1];
 
 await loadAssets();
 
@@ -15,51 +22,38 @@ canvas.height = RENDER.HEIGHT;
 
 const MOUSE_SENS = INPUT.MOUSE_SENSE;
 
-const testJson = `
-{
-  "width": 9,
-  "height": 14,
-  "tiles": [
-    1,1,1,2,2,2,1,1,1,
-    1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,1,
-    1,0,1,0,4,0,1,0,1,
-    1,0,0,0,0,0,0,0,1,
-    1,0,1,0,4,0,1,0,1,
-    1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,1,
-    1,1,1,4,4,4,1,1,1,
-    0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,
-    2,2,2,2,2,2,2,2,2
-  ],
-  "commands": [
-    {"type":"player","x":2,"y":2},
-    {"type":"pickup","kind":"page","x":5,"y":4},
-    {"type":"pickup","kind":"page","x":3,"y":4},
-    {"type":"pickup","kind":"page","x":7,"y":7},
-    {"type":"pickup","kind":"page","x":1,"y":7},
-    {"type":"pickup","kind":"page","x":1,"y":1},
-    {"type":"pickup","kind":"page","x":7,"y":1},
-    {"type":"pickup","kind":"key","x":4,"y":7},
-    {"type":"teleporter","x":0,"y":12,"tx":8.5,"ty":9.5,"floor":-1,"angle":1.54,"texture":"platypus"},
-    {"type":"teleporter","x":8,"y":12,"tx":0.5,"ty":9.5,"floor":-1,"angle":1.57,"texture":"wall3"},
-    {"type":"sprite","x":4,"y":4,"w":0.4,"h":0.4,"texture":"wall3","worldHeight":0.6},
-    {"type":"bot","x":6,"y":2,"w":0.4,"h":0.4,"speed":0.2,"color":"magenta","worldHeight":1,"texture":"platypus"}
-  ]
+// Catch bad teleporters at startup instead of freezing the game loop mid-teleport.
+function validateTeleporters(worlds: World[]) {
+    worlds.forEach((w, i) => {
+        for (const cmd of w.spawnList) {
+            if (cmd.type !== "teleporter") continue;
+            const at = `Floor ${i} teleporter at (${cmd.x}, ${cmd.y})`;
+
+            if (!Number.isInteger(cmd.floor) || cmd.floor < -1 || cmd.floor >= worlds.length)
+                throw new Error(`${at} targets invalid floor ${cmd.floor} (use -1 or 0..${worlds.length - 1})`);
+
+            const destFloor = cmd.floor === -1 ? i : cmd.floor;
+            const dest = worlds[destFloor]!.level;
+            const tx = Math.floor(cmd.tx), ty = Math.floor(cmd.ty);
+            if (!dest.inBounds(tx, ty) || dest.isSolid(tx, ty))
+                throw new Error(`${at} lands at (${cmd.tx}, ${cmd.ty}), which is outside floor ${destFloor} or inside a wall`);
+        }
+    });
 }
-`;
 
-const world = parseMap(testJson);
+const worlds: World[] = FLOOR_FILES.map((json) => parseMap(json));
+validateTeleporters(worlds);
 
-const {player, bots, sprites, pickups} = spawnWorld(world);
+// The lobby (floor 0) creates the one real Player; the other floors only produce entities.
+const { player, ...lobby } = spawnWorld(worlds[0]!);
+
+const floors: FloorState[] = [
+    { level: worlds[0]!.level, ...lobby },
+    ...worlds.slice(1).map((w) => ({ level: w.level, ...spawnFloor(w) })),
+];
+
 const keys = new Set<string>();
-
-const game = new Game([
-    { level: world.level, bots, sprites, pickups }
-], player, canvas, keys);
+const game = new Game(floors, player, canvas, keys);
 window.requestAnimationFrame(game.update);
 
 window.addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
@@ -71,5 +65,4 @@ document.addEventListener("mousemove", (e: MouseEvent) => {
     if (document.pointerLockElement !== canvas) return;
     if (Math.abs(e.movementX) >= INPUT.MOUSE_SPIKE_LIMIT) return;
     game.mouseTurn += e.movementX * MOUSE_SENS;
-})
-
+});
