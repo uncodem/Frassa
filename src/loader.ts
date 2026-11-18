@@ -66,13 +66,10 @@ export function parseMap(worldString: string): World {
     }
 }
 
-export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites: Sprite[], pickups: Pickup[]} {
+export function spawnFloor(world: World): { bots: Bot[], sprites: Sprite[], pickups: Pickup[] } {
     const pCmd = world.spawnList.find(({type: t}) => t === "player");
-    if (!pCmd) throw new Error("World contains no player spawner");
-
-    const player = new Player(pCmd.x+TILE_CENTER, pCmd.y+TILE_CENTER, PLAYER.SIZE, PLAYER.SIZE);
-    if (pCmd.type === "player" && pCmd.angle) player.setAngle(pCmd.angle);
-
+    if (pCmd) throw new Error("Floor must contain no player spawner");
+    
     const bots: Bot[] = [];
     const sprites: Sprite[] = [];
     const pickups: Pickup[] = [];
@@ -104,11 +101,23 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
                 break;
         }
     }
-    return {
-        player,
-        bots,
-        sprites,
-        pickups,
-    };
+
+    return { bots, sprites, pickups };
+
+}
+
+export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites: Sprite[], pickups: Pickup[]} {
+    const pCmdIdx = world.spawnList.findIndex(({type: t}) => t === "player");
+    if (pCmdIdx === -1) throw new Error("World contains no player spawner");
+
+    const pCmd = world.spawnList[pCmdIdx]!;
+    const player = new Player(pCmd.x+TILE_CENTER, pCmd.y+TILE_CENTER, PLAYER.SIZE, PLAYER.SIZE);
+    if (pCmd.type === "player" && pCmd.angle) player.setAngle(pCmd.angle);
+
+    world.spawnList.splice(pCmdIdx, 1);
+
+    const entities = spawnFloor(world);
+    return {player, ...entities};
+
 }
 
