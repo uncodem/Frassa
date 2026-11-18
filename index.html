@@ -8,11 +8,28 @@
     </head>
     <body>
         <div id="game-container">
-            <canvas id="display"></canvas>
-            <div id="start-overlay">
+            <div id="start-overlay" class="screen">
                 <button id="start-btn">Click to Start</button>
             </div>
+
+            <div id="title-screen" class="screen hidden">
+                <img id="title-img" src="/assets/title.png" alt=""/>
+                <p>Click to Continue</p>
+                <p id="best-time"></p>
+            </div>
+
+            <div id="win-screen" class="screen hidden">
+                <h1>Nakaescape ka ya</h1>
+                <p id="win-time"></p>
+                <p>Click to Continue</p>
+            </div>
+            <div id="lose-screen" class="screen hidden">
+                <h1>Nahuli ka ya</h1>
+                <p>Click to Continue</p>
+            </div>
+
+            <canvas id="display"></canvas>
         </div>
-        <script type="module" src="./src/main.ts"/></script>
+        <script type="module" src="./src/main.ts"></script>
     </body>
 </html>
