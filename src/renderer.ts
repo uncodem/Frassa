@@ -18,8 +18,8 @@ export class Renderer {
 
     private projectSprite(p: Player, W: number, H: number, fov: number, sprite: Sprite): ProjectedSprite | null {
         const rx = sprite.x - p.x, ry = sprite.y - p.y;
-        const depth = rx * p.dirX + ry * p.dirY;
-        const lateral = ry * p.dirX - rx * p.dirY;
+        const depth = rx * p.dx + ry * p.dy;
+        const lateral = ry * p.dx - rx * p.dy;
 
         if (depth <= RENDER.NEAR_CLIP || depth > RENDER.MAX_DIST) return null;
 

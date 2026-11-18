@@ -6,8 +6,6 @@ import { PLAYER } from "./constants";
 export class Player extends Entity {
     private pages: number;
     private cam: Camera;
-    private dx: number;
-    private dy: number;
 
     constructor(
         x: number,
@@ -20,28 +18,21 @@ export class Player extends Entity {
         super(x,y,w,h);
         this.pages = 0;
         this.cam = new Camera();
-
-        this.dx = 1;
-        this.dy = 0;
     }
 
     get camera(): Camera {
         return this.cam;
     }
 
-    get dirX(): number { return this.dx; }
-    get dirY(): number { return this.dy; }
+    get dx(): number { return Math.cos(this.cam.a); }
+    get dy(): number { return Math.sin(this.cam.a); }
 
     turn(da: number) {
         const na = this.cam.turn(da * this.turnSpeed);
-        this.dx = Math.cos(na);
-        this.dy = Math.sin(na);
     }
 
     setAngle(na: number) {
         this.cam.a = na;
-        this.dx = Math.cos(na);
-        this.dy = Math.sin(na);
     }
 
     move(level: Level, amnt: number) {
