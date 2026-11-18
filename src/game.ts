@@ -20,24 +20,29 @@ export interface FloorState {
     raycaster?: Raycaster;
 }
 
+export type Phase = "boot" | "title" | "playing" | "paused" | "won" | "lost";
+
 export class Game {
-    private nav: NavGrid;
-    private raycaster: Raycaster;
     private renderer: Renderer;
     private last: DOMHighResTimeStamp = 0;
     private pendingTeleport: Teleporter|null = null;
-    private currentFloor: FloorState;
+    private currentFloor!: FloorState;
+
+    public phase: Phase = "boot";
+    public phaseSince: number = 0;
+    public elapsed: number = 0;
+    public onPhaseChange: (p: Phase) => void = () => {};
 
     private pages: number = 0;
     private hasKey: boolean = false;
-    // TODO: Add catch consequences
-    private caught: boolean = false;
-
-    public bots: Bot[];
-    public sprites: Sprite[];
-    public pickups: Pickup[];
 
     public mouseTurn: number = 0;
+
+    get raycaster(): Raycaster { return this.currentFloor.raycaster!; }
+    get nav(): NavGrid { return this.currentFloor.nav!; }
+    get bots(): Bot[] { return this.currentFloor.bots; }
+    get sprites(): Sprite[] { return this.currentFloor.sprites; }
+    get pickups(): Pickup[] { return this.currentFloor.pickups; }
 
     constructor(
         private floors: FloorState[],
@@ -46,32 +51,41 @@ export class Game {
         private keyset: Set<string>,
     ) {
         this.renderer = new Renderer(canvas);
+        this.load(floors, player);
+    }
+
+    private load(floors: FloorState[], player: Player) {
+        this.floors = floors;
+        this.player = player;
 
         for (const floor of this.floors) {
             floor.nav = new NavGrid(floor.level);
             floor.raycaster = new Raycaster(floor.level, this.canvas.width);
         }
 
-        this.currentFloor = this.floors[0]!;
-        this.nav = this.currentFloor.nav!;
-        this.raycaster = this.currentFloor.raycaster!;
-        this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
+        this.pages = 0;
+        this.hasKey = false;
+        this.elapsed = 0;
+        this.mouseTurn = 0;
+        this.pendingTeleport = null;
 
-        this.bots = this.currentFloor.bots;
-        this.sprites = this.currentFloor.sprites;
-        this.pickups = this.currentFloor.pickups;
+        this.setLevel(0);
+    }
+
+    public reset(floors: FloorState[], player: Player) {
+        this.load(floors, player);
+        this.setPhase("title");
+    }
+
+    public setPhase(p: Phase) {
+        this.phase = p;
+        this.phaseSince = performance.now();
+        this.onPhaseChange(p);
     }
 
     setLevel(floorNum: number) {
         if (floorNum < 0 || floorNum >= this.floors.length) throw new Error("Invalid floor destination");
         this.currentFloor = this.floors[floorNum]!;
-        ({
-            bots: this.bots, 
-            sprites: this.sprites,
-            pickups: this.pickups,
-        } = this.currentFloor);
-        this.nav = this.currentFloor.nav!;
-        this.raycaster = this.currentFloor.raycaster!;
         this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
     }
 
@@ -87,9 +101,8 @@ export class Game {
         else if (this.keyset.has("arrowright")) this.player.turn(dt);
     }
 
-    public update = (timestamp: DOMHighResTimeStamp) => {
-        const dt = Math.min((timestamp - this.last) / 1000, INPUT.MAX_DT);
-        this.last = timestamp;
+    private step(dt: number) {
+        this.elapsed += dt;
 
         let ox = Math.floor(this.player.x), oy = Math.floor(this.player.y);
 
@@ -103,25 +116,41 @@ export class Game {
         }
 
         this.collectPickups();
-        this.caught = false;
+        let caught = false;
         for (const bot of this.bots) {
             bot.update(dt, this.nav, this.player);
-            this.checkCaught(bot);
+            if (this.checkCaught(bot)) caught = true;
         }
 
-        const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
-        this.renderer.drawFrame(this.player, this.currentFloor.level, [...this.bots, ...this.sprites, ...this.pickups], hits);
-
-        this.renderer.ctx.font = "24px monospace";
-        this.renderer.ctx.fillStyle = "white";
-        this.renderer.ctx.fillText(`Pages: ${this.pages}${this.hasKey ? " | key" : ""}`, 8, 32);
-        this.renderer.ctx.fillStyle = "red";
-        this.renderer.ctx.fillText(`${this.caught ? "Caught!" : ""}`, 8, 52);
+        if (caught) {
+            this.pendingTeleport = null;
+            this.lose();
+        }
 
         if (this.pendingTeleport) {
             this.handleTeleport(this.pendingTeleport);
             this.pendingTeleport = null;
         }
+
+    }
+
+    private draw() {
+        const hits = this.raycaster.getFrame(this.player.x, this.player.y, this.player.camera);
+        this.renderer.drawFrame(this.player, this.currentFloor.level, [...this.bots, ...this.sprites, ...this.pickups], hits);
+
+        if (this.phase === "playing") {
+            this.renderer.ctx.font = "24px monospace";
+            this.renderer.ctx.fillStyle = "white";
+            this.renderer.ctx.fillText(`Pages: ${this.pages}${this.hasKey ? " | key" : ""}`, 8, 32);
+        }
+    }
+
+    public update = (timestamp: DOMHighResTimeStamp) => {
+        const dt = Math.min((timestamp - this.last) / 1000, INPUT.MAX_DT);
+        this.last = timestamp;
+
+        if (this.phase === "playing") this.step(dt);
+        this.draw();
 
         window.requestAnimationFrame(this.update);
     }
@@ -157,9 +186,8 @@ export class Game {
         }
     }
 
-    private checkCaught(b: Bot) {
-        if (Math.hypot(b.x - this.player.x, b.y - this.player.y) < GAME.CATCH_RADIUS)
-            this.caught = true;
+    private checkCaught(b: Bot): boolean {
+        return (Math.hypot(b.x - this.player.x, b.y - this.player.y) < GAME.CATCH_RADIUS);
     }
 
 }
