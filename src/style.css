@@ -3,6 +3,7 @@ html, body {
     height: 100%;
     background: #000;
     overflow: hidden;
+    font-family: Arial, "monospace";
 }
 
 body {
@@ -11,9 +12,33 @@ body {
     justify-content: center;
 }
 
-canvas {
+#game-container {
+    position: relative;
     width: min(100vw, 100vh * 16 / 9);
+}
+
+canvas {
+    display: block;
+    width: 100%;
     aspect-ratio: 16 / 9;
     image-rendering: pixelated;
+}
+
+#start-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.7);
+    z-index: 10;
+}
+
+#start-btn {
+    background-color: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 2em;
+    border: 0;
+    padding: 0.7em;
 }
 
