@@ -93,10 +93,14 @@ export function spawnWorld(world: World): {player: Player, bots: Bot[], sprites:
             case "pickup":
                 if (!isPickupType(cmd.kind) || cmd.kind === "teleporter")
                     throw new Error("Pickup spawn command contains invalid type");
-                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, (cmd.kind === PickupType.Page) ? PICKUP.PAGE_COLOR : PICKUP.KEY_COLOR, cmd.texture));
+                if (cmd.texture && !isTextureId(cmd.texture))
+                    throw new Error("Pickup spawn command contains invalid texture");
+                pickups.push(new Pickup(cmd.kind as PickupType, cmd.x+TILE_CENTER, cmd.y+TILE_CENTER, (cmd.kind === PickupType.Page) ? PICKUP.PAGE_COLOR : PICKUP.KEY_COLOR, cmd.texture as TextureId));
                 break;
             case "teleporter":
-                pickups.push(new Teleporter(cmd.x + TILE_CENTER, cmd.y + TILE_CENTER, cmd.tx, cmd.ty, cmd.floor, cmd.angle, cmd.texture));
+                if (cmd.texture && !isTextureId(cmd.texture))
+                    throw new Error("Teleporter spawn command contains invalid texture");
+                pickups.push(new Teleporter(cmd.x + TILE_CENTER, cmd.y + TILE_CENTER, cmd.tx, cmd.ty, cmd.floor, cmd.angle, cmd.texture as TextureId));
                 break;
         }
     }

@@ -2,7 +2,7 @@
 import { Level } from "./level";
 import { Player } from "./player";
 import { Bot } from "./bot";
-import { Sprite, Pickup, PickupType } from "./sprite";
+import { Sprite, Pickup, PickupType, Teleporter } from "./sprite";
 import { NavGrid } from "./nav";
 import { Raycaster } from "./raycaster";
 import { Renderer } from "./renderer";
