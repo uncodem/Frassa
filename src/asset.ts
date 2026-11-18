@@ -21,11 +21,11 @@ export type SoundId = (typeof SoundId)[keyof typeof SoundId];
 const SOUNDS: Record<SoundId, { files: string[] } & Partial<HowlOptions>> = {
     [SoundId.Title]: { files: ["title.mp3", "title.ogg"], loop: true, volume: 0.6 },
     [SoundId.Win]:   { files: ["win.mp3", "win.ogg"] },
-    [SoundId.Lose]:  { files: ["lose.mp3", "lose.ogg"] },
-    [SoundId.Page]:  { files: ["page.ogg", "page.mp3"] },
-    [SoundId.Key]:   { files: ["key.ogg", "key.mp3"] },
+    [SoundId.Lose]:  { files: ["lose.wav", "lose.mp3"] },
+    [SoundId.Page]:  { files: ["page.mp3", "page.ogg"] },
+    [SoundId.Key]:   { files: ["key.mp3", "key.ogg"] },
     [SoundId.Chase]: { files: ["chase.wav", "chase.ogg"], loop: true },
-    [SoundId.Catch]: { files: ["catch.ogg", "catch.mp3"] },
+    [SoundId.Catch]: { files: ["catch.mp3", "catch.ogg"] },
 };
 
 const sounds = new Map<SoundId, Howl>();
