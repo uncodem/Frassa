@@ -16,6 +16,7 @@ export class Game {
     private raycaster: Raycaster;
     private renderer: Renderer;
     private last: DOMHighResTimeStamp = 0;
+    private pendingTeleport: Teleporter|null = null;
 
     private pages: number = 0;
     private hasKey: boolean = false;
@@ -90,6 +91,11 @@ export class Game {
         this.renderer.ctx.fillStyle = "red";
         this.renderer.ctx.fillText(`${this.caught ? "Caught!" : ""}`, 8, 52);
 
+        if (this.pendingTeleport) {
+            this.handleTeleport(this.pendingTeleport);
+            this.pendingTeleport = null;
+        }
+
         window.requestAnimationFrame(this.update);
     }
 
@@ -97,6 +103,12 @@ export class Game {
         for (let i = this.pickups.length - 1; i >= 0; i--) {
             const p = this.pickups[i]!;
             if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > GAME.PICKUP_RADIUS) continue;
+
+            if (p.kind === PickupType.Teleporter) {
+                this.pendingTeleport ??= p as Teleporter;
+                continue;
+            }
+
             this.pickups.splice(i, 1);
             this.onPickup(p);
         }
@@ -106,6 +118,7 @@ export class Game {
         // TODO: Allow different floor teleports
         this.player.x = p.tx;
         this.player.y = p.ty;
+        if (p.floor === -1) this.nav.compute(Math.floor(this.player.x), Math.floor(this.player.y));
         if (p.angle) this.player.setAngle(p.angle);
     }
 
@@ -113,7 +126,6 @@ export class Game {
         switch (p.kind) {
             case PickupType.Page: this.pages++; break;
             case PickupType.Key: this.hasKey = true; break;
-            case PickupType.Teleporter: this.handleTeleport(p as Teleporter); break;
         }
     }
 
