@@ -98,14 +98,22 @@ export class Game {
             const p = this.pickups[i]!;
             if (Math.hypot(p.x - this.player.x, p.y - this.player.y) > GAME.PICKUP_RADIUS) continue;
             this.pickups.splice(i, 1);
-            this.onPickup(p.kind);
+            this.onPickup(p);
         }
     }
 
-    private onPickup(kind: PickupType) {
-        switch (kind) {
+    private handleTeleport(p: Teleporter) {
+        // TODO: Allow different floor teleports
+        this.player.x = p.tx;
+        this.player.y = p.ty;
+        if (p.angle) this.player.setAngle(p.angle);
+    }
+
+    private onPickup(p: Pickup) {
+        switch (p.kind) {
             case PickupType.Page: this.pages++; break;
-            case PickupType.Key: this.hasKey = true;
+            case PickupType.Key: this.hasKey = true; break;
+            case PickupType.Teleporter: this.handleTeleport(p as Teleporter); break;
         }
     }
 
